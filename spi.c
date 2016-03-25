@@ -36,15 +36,15 @@ static u32 spibar;
 static void reset_internal_fifo_pointer(void)
 {
 	do {
-		memory_write_byte(spibar + 2, memory_read_byte(spibar + 2) | 0x10);
-	} while (memory_read_byte(spibar + 0xD) & 0x7);
+		writeb(spibar + 2, readb(spibar + 2) | 0x10);
+	} while (readb(spibar + 0xD) & 0x7);
 }
 
 static void execute_command(void)
 {
-	memory_write_byte(spibar + 2, memory_read_byte(spibar + 2) | 1);
+	writeb(spibar + 2, readb(spibar + 2) | 1);
 
-	while ((memory_read_byte(spibar + 2) & 1) && (memory_read_byte(spibar+3) & 0x80));
+	while ((readb(spibar + 2) & 1) && (readb(spibar+3) & 0x80));
 }
 
 void spi_init(void)
@@ -57,9 +57,9 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 		unsigned int bitsout, void *din, unsigned int bitsin)
 {
 	/* First byte is cmd which can not being sent through FIFO. */
-	u8 cmd = *(u8 *)dout++;
+	u32 cmd = *(u32 *)dout++;
 	u8 readoffby1;
-	u8 readwrite;
+	u32 readwrite;
 	u8 bytesout, bytesin;
 	u8 count;
 
@@ -70,12 +70,12 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	readoffby1 = bytesout ? 0 : 1;
 
 	readwrite = (bytesin + readoffby1) << 4 | bytesout;
-	memory_write_byte(spibar + 1, readwrite);
-	memory_write_byte(spibar + 0, cmd);
+	writeb(spibar + 1, readwrite);
+	writeb(spibar + 0, cmd);
 
 	reset_internal_fifo_pointer();
 	for (count = 0; count < bytesout; count++, dout++) {
-		memory_write_byte(spibar + 0x0C, *(u8 *)dout);
+		writeb(spibar + 0x0C, *(u32 *)dout);
 	}
 
 	reset_internal_fifo_pointer();
@@ -84,12 +84,12 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	reset_internal_fifo_pointer();
 	/* Skip the bytes we sent. */
 	for (count = 0; count < bytesout; count++) {
-		cmd = memory_read_byte(spibar + 0x0C);
+		cmd = readb(spibar + 0x0C);
 	}
 
 	//reset_internal_fifo_pointer();
 	for (count = 0; count < bytesin; count++, din++) {
-		*(u8 *)din = memory_read_byte(spibar + 0x0C);
+		*(u8 *)din = readb(spibar + 0x0C);
 	}
 	return 0;
 }
