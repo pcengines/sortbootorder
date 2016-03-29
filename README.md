@@ -4,9 +4,21 @@ Sortbootorder
 This repository contain source code of `sortbootorder` payload that sorts and
 save boot order in flash.
 
-Below instructions assume Docker-based build environment described [here](https://github.com/pcengines/apu2-documentation/blob/master/docs/building_env.md).
+Below instructions assume Docker-based build environment described
+[here](https://github.com/pcengines/apu2-documentation/blob/master/docs/building_env.md)
+and have PC Engines coreboot source code locally:
+
+```
+git clone git@github.com:pcengines/coreboot.git
+```
 
 ## Building
+
+Run container:
+
+```
+docker run -v ${PWD}/../src/coreboot:/coreboot -t -i pc-engines/apu2b
+```
 
 Inside container:
 
