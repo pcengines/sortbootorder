@@ -20,7 +20,7 @@ make
 
 ```
 cd /
-./coreboot/build/cbfstool ./coreboot/build/coreboot.rom add-payload -f payloads/pcengines/sortbootorder/sortbootorder.elf -n img/setup -t payload
+./coreboot/build/cbfstool ./coreboot/build/coreboot.rom add-payload -f ./coreboot/payloads/pcengines/sortbootorder/sortbootorder.elf -n img/setup -t payload
 ```
 
 ## Logs
