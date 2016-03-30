@@ -116,7 +116,7 @@ int main(void) {
 					copy_list_line(&(bootlist_def[i][0]), &(bootlist[i][0]));
 				int_ids( bootlist, max_lines, bootlist_def_ln );
 				break;
-			case 'S':
+			case 'T':
 				serial_toggle ^= 0x1;
 				break;
 			case 'N':
@@ -132,7 +132,7 @@ int main(void) {
 				outb(0x06, 0x0cf9); /* reset */
 				break;
 			default:
-				if (key >= 'a' && key <= 'z' ) {
+				if (key >= 'a' && key <= 'm' ) {
 					move_boot_list( bootlist, get_line_number(max_lines,key), max_lines );
 				}
 				break;
@@ -197,9 +197,9 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("==============================================\n");
 	printf("  R Restore boot order defaults\n");
 	printf("  N Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
-	printf("  S Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
-	printf("  E Exit setup with save\n");
+	printf("  T Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
 	printf("  X Exit setup without save\n");
+	printf("  E Exit setup with save\n");
 }
 
 /*******************************************************************************/
