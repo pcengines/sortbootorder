@@ -45,6 +45,7 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines,
 /*** local variables ***/
 static u8 ipxe_toggle;
 static u8 serial_toggle;
+static u8 usb_toggle;
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
@@ -122,6 +123,9 @@ int main(void) {
 			case 'N':
 				ipxe_toggle ^= 0x1;
 				break;
+			case 'U':
+				usb_toggle ^= 0x1;
+				break;
 			case 'E':
 				update_tag_value(bootlist, max_lines, "scon", serial_toggle + '0');
 				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
@@ -198,6 +202,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  R Restore boot order defaults\n");
 	printf("  N Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  T Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
+	printf("  U USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
 	printf("  X Exit setup without save\n");
 	printf("  E Exit setup with save\n");
 }
