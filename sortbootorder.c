@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2014 Sage Electronic Engineering, LLC
+ * Copyright (C) 2014-2016 PC Engines GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

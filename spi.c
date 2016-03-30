@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2012 Advanced Micro Devices, Inc.
  * Copyright (c) 2014 Sage Electronic Engineering, Inc.
+ * Copyright (c) 2015-2016 PC Engines GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
