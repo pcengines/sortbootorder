@@ -47,6 +47,19 @@ static u32 spibar;
 
 #ifdef FCH_YANGTZEE
 
+//
+// Extended SPI register
+//
+#define SPI_EXT_REG_INDX        0x1e
+#define SPI_EXT_REG_DATA        0x1f
+
+//
+// Indexes for extended SPI registers
+// defining Rx/Tx count
+//
+#define SPI_TX_BYTE_COUNT_IDX   0x05
+#define SPI_RX_BYTE_COUNT_IDX   0x06
+
 #define FIFO_SIZE_YANGTZE 71
 
 static void execute_command(void)
@@ -110,11 +123,18 @@ int spi_xfer(struct spi_slave *slave,
         return ret;
 
     //
-    // Use the extended TxByteCount and RxByteCount registers
-    // for setting tx/rx count
+    // Set tx/rx count using  extended TxByteCount and RxByteCount registers
     //
-    writeb(writeCnt, spibar + 0x48);
-    writeb(readCnt, spibar + 0x4b);
+    // SPIx1E SpiExtRegIndx
+    // SPIx1F SpiExtRegData
+    // SPIx1F_x05 TxByteCount
+    // SPIx1F_x06 RxByteCoun
+    //
+    writeb(SPI_TX_BYTE_COUNT_IDX, spibar + SPI_EXT_REG_INDX);
+    writeb(writeCnt, spibar + SPI_EXT_REG_DATA);
+
+    writeb(SPI_RX_BYTE_COUNT_IDX, spibar + SPI_EXT_REG_INDX);
+    writeb(readCnt, spibar + SPI_EXT_REG_DATA);
 
     SPI_TRACE("Filling buffer: ");
     int count;
