@@ -39,8 +39,7 @@ static u32 spibar;
 //
 #define FCH_YANGTZEE
 
-
-#ifdef SPI_DEBUG
+#ifdef SPI_TRACE_ENABLED
     #define SPI_TRACE(...) printf( __VA_ARGS__);
 #else
     #define SPI_TRACE(...)
