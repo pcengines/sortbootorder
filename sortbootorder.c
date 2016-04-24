@@ -126,7 +126,7 @@ int main(void) {
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
-			case 'E':
+			case 'S':
 				update_tag_value(bootlist, max_lines, "scon", serial_toggle + '0');
 				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
 				save_flash( bootlist, max_lines );
@@ -204,7 +204,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  T Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
 	printf("  U USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
 	printf("  X Exit setup without save\n");
-	printf("  E Exit setup with save\n");
+	printf("  S Exit setup with save\n");
 }
 
 /*******************************************************************************/
