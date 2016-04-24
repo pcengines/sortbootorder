@@ -34,6 +34,143 @@ static int bus_claimed = 0;
 
 static u32 spibar;
 
+//
+// Support for YANGTZEE FCH spi controller
+//
+#define FCH_YANGTZEE
+
+#ifdef SPI_TRACE_ENABLED
+    #define SPI_TRACE(...) printf( __VA_ARGS__);
+#else
+    #define SPI_TRACE(...)
+#endif
+
+#ifdef FCH_YANGTZEE
+
+//
+// Definitions of SPI registers
+//
+
+//
+// SPI FIFO
+// SPIx[C6:80] FIFO[70:0]
+//
+#define SPI_FIFO_BASE           0x80
+
+//
+// Extended SPI register
+//
+#define SPI_EXT_REG_INDX        0x1e
+#define SPI_EXT_REG_DATA        0x1f
+
+//
+// Indexes for extended SPI registers
+// defining Rx/Tx count
+//
+#define SPI_TX_BYTE_COUNT_IDX   0x05
+#define SPI_RX_BYTE_COUNT_IDX   0x06
+
+#define FIFO_SIZE_YANGTZE 71
+
+static void execute_command(void)
+{
+    SPI_TRACE("execute_command\n");
+    //
+    // SPI_Cntrl0[16]: ExecuteOpCode
+    // Write-1-only; cleared-by-hardware. Reset: 0. Write 1 to execute the transaction in
+    // the alternate program registers. This bit returns to 0 when the transaction is complete
+    //
+    writeb(readb(spibar + 2) | 1, spibar + 2);
+    while (readb(spibar + 2) & 1);
+}
+
+//
+// Check if the provided number of bytes to send/receive does not exceed limit
+//
+static int check_readwritecnt(unsigned int writecnt, unsigned int readcnt)
+{
+    unsigned int maxwritecnt = FIFO_SIZE_YANGTZE;
+    unsigned int maxreadcnt = FIFO_SIZE_YANGTZE - 3;
+
+    if (writecnt > maxwritecnt) {
+        printf("%s: SPI controller can not send %d bytes, it is limited to %d bytes\n",
+              __func__, writecnt, maxwritecnt);
+        return 1;
+    }
+
+    if (readcnt > maxreadcnt) {
+        printf("%s: SPI controller can not receive %d bytes, it is limited to %d bytes\n",
+              __func__, readcnt, maxreadcnt);
+        return 1;
+    }
+    return 0;
+}
+
+int spi_xfer(struct spi_slave *slave,
+        const void *dout,
+        unsigned int bitsout,
+        void *din,
+        unsigned int bitsin)
+{
+    unsigned int writeCnt = bitsout/8;
+    unsigned int readCnt = bitsin/8;
+    unsigned char* writeBuff = (unsigned char*)dout;
+    unsigned char* readBuff = (unsigned char*)din;
+
+    //
+    // First byte is cmd opcode
+    // and should not be sent through the buffer.
+    //
+    unsigned char cmd = *writeBuff++;
+
+    writeCnt--;
+
+    SPI_TRACE("%s, cmd=0x%02x, writecnt=%d, readcnt=%d\n", __func__, cmd, writeCnt, readCnt);
+    writeb(cmd, spibar + 0);
+
+    int ret = check_readwritecnt(writeCnt, readCnt);
+    if (ret != 0)
+        return ret;
+
+    //
+    // Set tx/rx count using  extended TxByteCount and RxByteCount registers
+    //
+    // SPIx1E SpiExtRegIndx
+    // SPIx1F SpiExtRegData
+    // SPIx1F_x05 TxByteCount
+    // SPIx1F_x06 RxByteCoun
+    //
+    writeb(SPI_TX_BYTE_COUNT_IDX, spibar + SPI_EXT_REG_INDX);
+    writeb(writeCnt, spibar + SPI_EXT_REG_DATA);
+
+    writeb(SPI_RX_BYTE_COUNT_IDX, spibar + SPI_EXT_REG_INDX);
+    writeb(readCnt, spibar + SPI_EXT_REG_DATA);
+
+    SPI_TRACE("Filling buffer: ");
+    int count;
+    for (count = 0; count < writeCnt; count++) {
+        SPI_TRACE("[%02x]", writeBuff[count]);
+        writeb(writeBuff[count], spibar + SPI_FIFO_BASE + count);
+    }
+    SPI_TRACE("\n");
+
+    execute_command();
+
+    SPI_TRACE("Reading buffer: ");
+    for (count = 0; count < readCnt; count++) {
+        readBuff[count] = readb(spibar + SPI_FIFO_BASE + (writeCnt + count) % FIFO_SIZE_YANGTZE);
+        SPI_TRACE("[%02x]", readBuff[count]);
+    }
+    SPI_TRACE("\n");
+
+    return 0;
+}
+
+//
+// Support for previous generations of spi controllers
+//
+#else
+
 static void reset_internal_fifo_pointer(void)
 {
 	do {
@@ -46,12 +183,6 @@ static void execute_command(void)
 	writeb(spibar + 2, readb(spibar + 2) | 1);
 
 	while ((readb(spibar + 2) & 1) && (readb(spibar+3) & 0x80));
-}
-
-void spi_init(void)
-{
-	pcidev_t dev  = PCI_DEV(0,0x14,3);
-	spibar = pci_read_config32(dev, 0xA0) & ~0x1F;
 }
 
 int spi_xfer(struct spi_slave *slave, const void *dout,
@@ -92,7 +223,13 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	for (count = 0; count < bytesin; count++, din++) {
 		*(u8 *)din = readb(spibar + 0x0C);
 	}
-	return 0;
+}
+#endif
+
+void spi_init(void)
+{
+    pcidev_t dev  = PCI_DEV(0,0x14,3);
+    spibar = pci_read_config32(dev, 0xA0) & ~0x1F;
 }
 
 #if defined (CONFIG_SB800_IMC_FWM)
