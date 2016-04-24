@@ -54,13 +54,17 @@ static void execute_command(void)
 {
     SPI_TRACE("execute_command\n");
     //
-    // FLASHROM --- DOES NOT WAIT ON BUSY BIT
+    // SPI_Cntrl0[16]: ExecuteOpCode
+    // Write-1-only; cleared-by-hardware. Reset: 0. Write 1 to execute the transaction in
+    // the alternate program registers. This bit returns to 0 when the transaction is complete
     //
     writeb(readb(spibar + 2) | 1, spibar + 2);
     while (readb(spibar + 2) & 1);
 }
 
-/* Check the number of bytes to be transmitted */
+//
+// Check if the provided number of bytes to send/receive does not exceed limit
+//
 static int check_readwritecnt(unsigned int writecnt, unsigned int readcnt)
 {
     unsigned int maxwritecnt = FIFO_SIZE_YANGTZE;
@@ -86,15 +90,14 @@ int spi_xfer(struct spi_slave *slave,
         void *din,
         unsigned int bitsin)
 {
-    /* First byte is cmd which can not being sent through FIFO. */
     unsigned int writeCnt = bitsout/8;
     unsigned int readCnt = bitsin/8;
     unsigned char* writeBuff = (unsigned char*)dout;
     unsigned char* readBuff = (unsigned char*)din;
 
     //
-    // First byte is cmd
-    // which can not be sent through the buffer.
+    // First byte is cmd opcode
+    // and should not be sent through the buffer.
     //
     unsigned char cmd = *writeBuff++;
 
@@ -107,7 +110,10 @@ int spi_xfer(struct spi_slave *slave,
     if (ret != 0)
         return ret;
 
-    /* Use the extended TxByteCount and RxByteCount registers. */
+    //
+    // Use the extended TxByteCount and RxByteCount registers
+    // for setting tx/rx count
+    //
     writeb(writeCnt, spibar + 0x48);
     writeb(readCnt, spibar + 0x4b);
 
