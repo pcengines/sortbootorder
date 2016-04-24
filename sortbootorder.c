@@ -79,9 +79,9 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-	printf("\n*********************************************************************");
-	printf("\n*** Sortbootorder payload    ver 1.1   Sage Electronic Engineering  *");
-	printf("\n*********************************************************************\n");
+	printf("\n****************************************************");
+	printf("\n*** Sortbootorder payload    ver 1.2   PC Engines  *");
+	printf("\n****************************************************\n");
 
 	// Find out where the bootorder file is in rom
 	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
