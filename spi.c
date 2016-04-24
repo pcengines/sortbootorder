@@ -48,6 +48,16 @@ static u32 spibar;
 #ifdef FCH_YANGTZEE
 
 //
+// Definitions of SPI registers
+//
+
+//
+// SPI FIFO
+// SPIx[C6:80] FIFO[70:0]
+//
+#define SPI_FIFO_BASE           0x80
+
+//
 // Extended SPI register
 //
 #define SPI_EXT_REG_INDX        0x1e
@@ -140,7 +150,7 @@ int spi_xfer(struct spi_slave *slave,
     int count;
     for (count = 0; count < writeCnt; count++) {
         SPI_TRACE("[%02x]", writeBuff[count]);
-        writeb(writeBuff[count], spibar + 0x80 + count);
+        writeb(writeBuff[count], spibar + SPI_FIFO_BASE + count);
     }
     SPI_TRACE("\n");
 
@@ -148,7 +158,7 @@ int spi_xfer(struct spi_slave *slave,
 
     SPI_TRACE("Reading buffer: ");
     for (count = 0; count < readCnt; count++) {
-        readBuff[count] = readb(spibar + 0x80 + (writeCnt + count) % FIFO_SIZE_YANGTZE);
+        readBuff[count] = readb(spibar + SPI_FIFO_BASE + (writeCnt + count) % FIFO_SIZE_YANGTZE);
         SPI_TRACE("[%02x]", readBuff[count]);
     }
     SPI_TRACE("\n");
