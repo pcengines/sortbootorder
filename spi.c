@@ -34,6 +34,108 @@ static int bus_claimed = 0;
 
 static u32 spibar;
 
+//
+// Support for YANGTZEE FCH spi controller
+//
+#define FCH_YANGTZEE
+
+
+#ifdef SPI_DEBUG
+    #define SPI_TRACE(...) printf( __VA_ARGS__);
+#else
+    #define SPI_TRACE(...)
+#endif
+
+#ifdef FCH_YANGTZEE
+
+#define FIFO_SIZE_YANGTZE 71
+
+static void execute_command(void)
+{
+    SPI_TRACE("execute_command\n");
+    //
+    // FLASHROM --- DOES NOT WAIT ON BUSY BIT
+    //
+    writeb(readb(spibar + 2) | 1, spibar + 2);
+    while (readb(spibar + 2) & 1);
+}
+
+/* Check the number of bytes to be transmitted */
+static int check_readwritecnt(unsigned int writecnt, unsigned int readcnt)
+{
+    unsigned int maxwritecnt = FIFO_SIZE_YANGTZE;
+    unsigned int maxreadcnt = FIFO_SIZE_YANGTZE - 3;
+
+    if (writecnt > maxwritecnt) {
+        printf("%s: SPI controller can not send %d bytes, it is limited to %d bytes\n",
+              __func__, writecnt, maxwritecnt);
+        return 1;
+    }
+
+    if (readcnt > maxreadcnt) {
+        printf("%s: SPI controller can not receive %d bytes, it is limited to %d bytes\n",
+              __func__, readcnt, maxreadcnt);
+        return 1;
+    }
+    return 0;
+}
+
+int spi_xfer(struct spi_slave *slave,
+        const void *dout,
+        unsigned int bitsout,
+        void *din,
+        unsigned int bitsin)
+{
+    /* First byte is cmd which can not being sent through FIFO. */
+    unsigned int writeCnt = bitsout/8;
+    unsigned int readCnt = bitsin/8;
+    unsigned char* writeBuff = (unsigned char*)dout;
+    unsigned char* readBuff = (unsigned char*)din;
+
+    //
+    // First byte is cmd
+    // which can not be sent through the buffer.
+    //
+    unsigned char cmd = *writeBuff++;
+
+    writeCnt--;
+
+    SPI_TRACE("%s, cmd=0x%02x, writecnt=%d, readcnt=%d\n", __func__, cmd, writeCnt, readCnt);
+    writeb(cmd, spibar + 0);
+
+    int ret = check_readwritecnt(writeCnt, readCnt);
+    if (ret != 0)
+        return ret;
+
+    /* Use the extended TxByteCount and RxByteCount registers. */
+    writeb(writeCnt, spibar + 0x48);
+    writeb(readCnt, spibar + 0x4b);
+
+    SPI_TRACE("Filling buffer: ");
+    int count;
+    for (count = 0; count < writeCnt; count++) {
+        SPI_TRACE("[%02x]", writeBuff[count]);
+        writeb(writeBuff[count], spibar + 0x80 + count);
+    }
+    SPI_TRACE("\n");
+
+    execute_command();
+
+    SPI_TRACE("Reading buffer: ");
+    for (count = 0; count < readCnt; count++) {
+        readBuff[count] = readb(spibar + 0x80 + (writeCnt + count) % FIFO_SIZE_YANGTZE);
+        SPI_TRACE("[%02x]", readBuff[count]);
+    }
+    SPI_TRACE("\n");
+
+    return 0;
+}
+
+//
+// Support for previous generations of spi controllers
+//
+#else
+
 static void reset_internal_fifo_pointer(void)
 {
 	do {
@@ -46,12 +148,6 @@ static void execute_command(void)
 	writeb(spibar + 2, readb(spibar + 2) | 1);
 
 	while ((readb(spibar + 2) & 1) && (readb(spibar+3) & 0x80));
-}
-
-void spi_init(void)
-{
-	pcidev_t dev  = PCI_DEV(0,0x14,3);
-	spibar = pci_read_config32(dev, 0xA0) & ~0x1F;
 }
 
 int spi_xfer(struct spi_slave *slave, const void *dout,
@@ -92,7 +188,13 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	for (count = 0; count < bytesin; count++, din++) {
 		*(u8 *)din = readb(spibar + 0x0C);
 	}
-	return 0;
+}
+#endif
+
+void spi_init(void)
+{
+    pcidev_t dev  = PCI_DEV(0,0x14,3);
+    spibar = pci_read_config32(dev, 0xA0) & ~0x1F;
 }
 
 #if defined (CONFIG_SB800_IMC_FWM)
