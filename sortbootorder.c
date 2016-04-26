@@ -112,25 +112,31 @@ int main(void) {
 		key = getchar();
 		printf("%c\n\n\n", key);
 		switch(key) {
+			case 'r':
 			case 'R':
 				for (i = 0; i < max_lines && i < bootlist_def_ln; i++ )
 					copy_list_line(&(bootlist_def[i][0]), &(bootlist[i][0]));
 				int_ids( bootlist, max_lines, bootlist_def_ln );
 				break;
+			case 't':
 			case 'T':
 				serial_toggle ^= 0x1;
 				break;
+			case 'n':
 			case 'N':
 				ipxe_toggle ^= 0x1;
 				break;
+			case 'u':
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
+			case 's':
 			case 'S':
 				update_tag_value(bootlist, max_lines, "scon", serial_toggle + '0');
 				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
+			case 'x':
 			case 'X':
 				printf("\nExiting ...");
 				outb(0x06, 0x0cf9); /* reset */
