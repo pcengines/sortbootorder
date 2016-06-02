@@ -191,9 +191,9 @@ u8 i=0;
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt ) {
 	int i,y;
 
-	printf("==============================================\n");
-	printf("Type lower case letter to move device to top\n");
-	printf("==============================================\n");
+	printf("=================================\n");
+	printf("Type letter to move device to top\n");
+	printf("=================================\n");
 	printf("boot devices\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
 		for (y = 0; y < lineDef_cnt; y++) {
@@ -202,15 +202,15 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 		}
 		printf("  %s", &(bootlist_map[y][0]));
 	}
-	printf("==============================================\n");
-	printf("Type upper case letter to invoke action\n");
-	printf("==============================================\n");
-	printf("  R Restore boot order defaults\n");
-	printf("  N Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
-	printf("  T Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
-	printf("  U USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
-	printf("  X Exit setup without save\n");
-	printf("  S Exit setup with save\n");
+	printf("============================\n");
+	printf("Type letter to invoke action\n");
+	printf("============================\n");
+	printf("  r Restore boot order defaults\n");
+	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
+	printf("  t Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
+	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
+	printf("  x Exit setup without save\n");
+	printf("  s Exit setup with save\n");
 }
 
 /*******************************************************************************/
