@@ -61,6 +61,7 @@ static int flash_address;
  *        - Restore order defaults,
  *        - Serial console disable / enable
  *        - Network / IPXE disable / enable
+ *        - USB boot disable / enable
  *        - Exit with or without saving order
  */
 
