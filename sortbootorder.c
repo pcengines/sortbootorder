@@ -82,7 +82,7 @@ int main(void) {
 #endif
 
 	printf("\n****************************************************");
-	printf("\n*** Sortbootorder payload    ver 1.2   PC Engines  *");
+	printf("\n*** Sortbootorder payload    ver 1.3   PC Engines  *");
 	printf("\n****************************************************\n");
 
 	// Find out where the bootorder file is in rom
