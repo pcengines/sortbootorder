@@ -74,6 +74,7 @@ int main(void) {
 	u8 bootlist_map_ln = 0;
 	char *ipxe_str;
 	char *scon_str;
+	char *usb_str;
 
 #ifdef CONFIG_USB /* this needs to be done in order to use the USB keyboard */
 	usb_initialize();
@@ -81,7 +82,7 @@ int main(void) {
 #endif
 
 	printf("\n****************************************************");
-	printf("\n*** Sortbootorder payload    ver 1.2   PC Engines  *");
+	printf("\n*** Sortbootorder payload    ver 1.3   PC Engines  *");
 	printf("\n****************************************************\n");
 
 	// Find out where the bootorder file is in rom
@@ -103,6 +104,10 @@ int main(void) {
 	scon_str = cbfs_find_string("scon", BOOTORDER_FILE);
 	scon_str += strlen("scon");
 	serial_toggle = scon_str ? strtoul(scon_str, NULL, 10) : 1;
+
+	usb_str = cbfs_find_string("usben", BOOTORDER_FILE);
+	usb_str += strlen("usben");
+	usb_toggle = usb_str ? strtoul(usb_str, NULL, 10) : 1;
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
 	int_ids( bootlist, max_lines, bootlist_def_ln );
@@ -135,6 +140,7 @@ int main(void) {
 			case 'S':
 				update_tag_value(bootlist, max_lines, "scon", serial_toggle + '0');
 				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
+				update_tag_value(bootlist, max_lines, "usben", usb_toggle + '0');
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
 			case 'x':
