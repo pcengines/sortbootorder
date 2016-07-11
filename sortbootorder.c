@@ -81,9 +81,7 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-	printf("\n****************************************************");
-	printf("\n*** Sortbootorder payload    ver 1.3   PC Engines  *");
-	printf("\n****************************************************\n");
+	printf("\n### PC Engines apu2 setup v1.3 ###\n");
 
 	// Find out where the bootorder file is in rom
 	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
@@ -114,7 +112,6 @@ int main(void) {
 
 	// Start main loop for user input
 	while (1) {
-		printf("\n> ");
 		key = getchar();
 		printf("%c\n\n\n", key);
 		switch(key) {
@@ -209,15 +206,12 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 		}
 		printf("  %s", &(bootlist_map[y][0]));
 	}
-	printf("============================\n");
-	printf("Type letter to invoke action\n");
-	printf("============================\n");
 	printf("  r Restore boot order defaults\n");
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
-	printf("  s Exit setup with save\n");
+	printf("  s Save configuration and exit\n");
 }
 
 /*******************************************************************************/
