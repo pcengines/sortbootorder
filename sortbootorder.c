@@ -195,10 +195,7 @@ u8 i=0;
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt ) {
 	int i,y;
 
-	printf("=================================\n");
-	printf("Type letter to move device to top\n");
-	printf("=================================\n");
-	printf("boot devices\n\n");
+	printf("Boot order - type letter to move device to top.\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
 		for (y = 0; y < lineDef_cnt; y++) {
 			if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0)
