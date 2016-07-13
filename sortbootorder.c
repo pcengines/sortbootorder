@@ -32,6 +32,17 @@
 #define NUL                0x00
 #define FLASH_SIZE_CHUNK   0x1000 //4k
 
+// These names come from bootorder_map file
+// indexes depend on device order in this file
+#define USB_1_SS           0
+#define USB_2_SS           1
+#define USB_1_HS           2
+#define USB_2_HS           3
+#define SDCARD             4
+#define MSATA              5
+#define SATA               6
+#define IPXE               7
+
 /*** prototypes ***/
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
 static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 max_lines );
@@ -50,6 +61,7 @@ static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
 static int flash_address;
+static u8 device_toggle[MAX_DEVICES];
 
 /* sortbootorder payload:
  * This payload allows the user to reorder the lines in the bootorder file.
@@ -75,6 +87,11 @@ int main(void) {
 	char *ipxe_str;
 	char *scon_str;
 	char *usb_str;
+
+	// Set to enabled because enable toggle is not (yet) implemented for these devices
+	device_toggle[SDCARD] = 1;
+	device_toggle[MSATA] = 1;
+	device_toggle[SATA] = 1;
 
 #ifdef CONFIG_USB /* this needs to be done in order to use the USB keyboard */
 	usb_initialize();
@@ -194,15 +211,26 @@ u8 i=0;
 /*******************************************************************************/
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt ) {
 	int i,y;
+	char print_device[MAX_LENGTH];
+
+	device_toggle[USB_1_SS] = usb_toggle;
+	device_toggle[USB_2_SS] = usb_toggle;
+	device_toggle[USB_1_HS] = usb_toggle;
+	device_toggle[USB_2_HS] = usb_toggle;
+	device_toggle[IPXE] = ipxe_toggle;
 
 	printf("Boot order - type letter to move device to top.\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
 		for (y = 0; y < lineDef_cnt; y++) {
-			if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0)
-				 break;
+			if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0) {
+				strcpy(print_device, &bootlist_map[y][0]);
+				print_device[strlen(print_device)-1] = '\0';
+				printf("  %s %s\n", print_device, (device_toggle[y]) ? "" : "(disabled)");
+				break;
+			}
 		}
-		printf("  %s", &(bootlist_map[y][0]));
 	}
+	printf("\n\n");
 	printf("  r Restore boot order defaults\n");
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
