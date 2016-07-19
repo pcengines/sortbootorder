@@ -48,7 +48,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 max_lines );
 static void copy_list_line( char *src, char *dest );
 static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][MAX_LENGTH], u8 *line_count);
-static int get_line_number(u8 line_cnt, char key );
+static int get_line_number(u8 line_start, u8 line_end, char key );
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines);
 static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, const char * tag, char value);
@@ -84,6 +84,8 @@ int main(void) {
 	u8 max_lines = 0;
 	u8 bootlist_def_ln = 0;
 	u8 bootlist_map_ln = 0;
+	u8 line_start = 0;
+	u8 line_number = 0;
 	char *ipxe_str;
 	char *scon_str;
 	char *usb_str;
@@ -164,7 +166,11 @@ int main(void) {
 				break;
 			default:
 				if (key >= 'a' && key <= 'm' ) {
-					move_boot_list( bootlist, get_line_number(max_lines,key), max_lines );
+					line_start = 0;
+					while ((line_number =  get_line_number(line_start, max_lines, key)) > line_start) {
+						move_boot_list( bootlist, line_number , max_lines );
+						line_start++;
+					}
 				}
 				break;
 		}
@@ -189,13 +195,13 @@ static int strcmp_printable_char(const char *s1, const char *s2)
 }
 
 /*******************************************************************************/
-static int get_line_number( u8 line_cnt, char key ) {
+static int get_line_number( u8 line_start, u8 line_end, char key ) {
 	int i;
-	for (i = 0; i < line_cnt; i++ ) {
+	for (i = line_end - 1; i >= line_start; i-- ) {
 		if(id[i] == key)
 			break;
 	}
-	return (i == line_cnt) ? 0 : i;
+	return (i == line_start - 1) ? 0 : i;
 }
 
 /*******************************************************************************/
@@ -210,7 +216,7 @@ u8 i=0;
 
 /*******************************************************************************/
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt ) {
-	int i,y;
+	int i,j,y,unique;
 	char print_device[MAX_LENGTH];
 
 	device_toggle[USB_1_SS] = usb_toggle;
@@ -223,10 +229,17 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	for (i = 0; i < line_cnt; i++ ) {
 		for (y = 0; y < lineDef_cnt; y++) {
 			if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0) {
-				strcpy(print_device, &bootlist_map[y][0]);
-				print_device[strlen(print_device)-1] = '\0';
-				printf("  %s %s\n", print_device, (device_toggle[y]) ? "" : "(disabled)");
-				break;
+				unique = 1;
+				for (j = 0; j < y; j++) {
+					if (strcmp_printable_char(&bootlist_map[y][0], &bootlist_map[j][0])  ==  0)
+						unique = 0;
+				}
+				if (unique) {
+					strcpy(print_device, &bootlist_map[y][0]);
+					print_device[strlen(print_device)-1] = '\0';
+					printf("  %s %s\n", print_device, (device_toggle[y]) ? "" : "(disabled)");
+					break;
+				}
 			}
 		}
 	}
