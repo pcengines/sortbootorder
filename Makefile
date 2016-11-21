@@ -27,36 +27,77 @@
 ## SUCH DAMAGE.
 ##
 
-# Sample libpayload Makefile.
-include ../../libpayload/.xcompile
-include ../../libpayload/.config
+$(if $(wildcard .xcompile),,$(eval $(shell ../../../../util/xcompile/xcompile $(XGCCPATH) > .xcompile || rm -f .xcompile)))
+.xcompile: ../../../../util/xcompile/xcompile
 
-ARCH-$(CONFIG_LP_ARCH_ARMV)    := arm
-ARCH-$(CONFIG_LP_ARCH_POWERPC) := powerpc
-ARCH-$(CONFIG_LP_ARCH_X86)     := i386
+CONFIG_COMPILER_GCC := y
+ARCH-y     := x86_32
+
+include .xcompile
+
+src := $(CURDIR)
+srctree := $(src)
+tint_obj := $(src)/build
+
+LIBCONFIG_PATH := $(realpath ../../../libpayload)
+LIBPAYLOAD_DIR := $(tint_obj)/libpayload
+HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_DIR)/lib/libpayload.a)
+LIB_CONFIG ?= configs/defconfig-tinycurses
+
+# CFLAGS := -Wall -Werror -Os
+CFLAGS := -Wall -g -Os
+TARGET := tint
+OBJS := $(TARGET).o engine.o io.o utils.o
+
+ARCH-y     := x86_32
 
 CC := $(CC_$(ARCH-y))
 AS := $(AS_$(ARCH-y))
-LIBPAYLOAD_DIR := ../../libpayload/install/libpayload
-XCC := CC="$(CC)" $(LIBPAYLOAD_DIR)/bin/lpgcc
-XAS := AS="$(AS)" $(LIBPAYLOAD_DIR)/bin/lpas
-CFLAGS := -Wall -Werror -Os
-TARGET := sortbootorder
-OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
+OBJCOPY := $(OBJCOPY_$(ARCH-y))
+
+LPCC := CC="$(CC)" $(LIBPAYLOAD_DIR)/bin/lpgcc
+LPAS := AS="$(AS)" $(LIBPAYLOAD_DIR)/bin/lpas
+
+# Make is silent per default, but 'make V=1' will show all compiler calls.
+ifneq ($(V),1)
+Q := @
+endif
 
 all: $(TARGET).elf
+#	printf" CC   $(CC)\n"
 
-$(TARGET).elf: $(OBJS)
-	$(XCC) -o $@ $(OBJS)
+$(TARGET).elf: $(OBJS) libpayload
+	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
+	$(Q)$(LPCC) -o $@ $(OBJS)
+	$(Q)$(OBJCOPY) --only-keep-debug $@ tint.debug
+	$(Q)$(OBJCOPY) --strip-debug $@
+	$(Q)$(OBJCOPY) --add-gnu-debuglink=tint.debug $@
 
-%.o: %.c
-	$(XCC) $(CFLAGS) -c -o $@ $<
+%.o: %.c libpayload
+	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
+	$(Q)$(LPCC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-%.S.o: %.S
-	$(XAS) --32 -o $@ $<
+%.S.o: %.S libpayload
+	$(Q)printf "  LPAS      $(subst $(shell pwd)/,,$(@))\n"
+	$(Q)$(LPAS) $(ASFLAGS) --32 -o $@ $<
+
+ifneq ($(strip $(HAVE_LIBPAYLOAD)),)
+libpayload:
+	$(Q)printf "Found Libpayload $(LIBPAYLOAD_DIR).\n"
+else
+libpayload:
+	$(Q)printf "Building libpayload @ $(LIBCONFIG_PATH).\n"
+	$(Q)make -C $(LIBCONFIG_PATH) distclean
+	$(Q)make -C $(LIBCONFIG_PATH) defconfig KBUILD_DEFCONFIG=$(LIB_CONFIG)
+	$(Q)make -C $(LIBCONFIG_PATH) DESTDIR=$(tint_obj) install
+endif
 
 clean:
-	rm -f $(TARGET).elf *.o
+	$(Q)rm -f $(TARGET).elf $(TARGET).debug *.o
+	$(Q)rm .xcompile
 
 distclean: clean
+	$(Q)rm -rf $(tint_obj)
 
+
+.PHONY: all clean do-it-all depend with-depends without-depends debian postinst
