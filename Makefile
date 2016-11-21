@@ -45,7 +45,7 @@ HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_DIR)/lib/libpayload.a)
 LIB_CONFIG ?= configs/defconfig-tinycurses
 
 # CFLAGS := -Wall -Werror -Os
-CFLAGS := -Wall -g -Os
+CFLAGS := -Wall -g -Os -fno-builtin
 TARGET := sortbootorder
 OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
 
@@ -67,7 +67,7 @@ all: Makefile $(TARGET).elf
 
 $(TARGET).elf: $(OBJS) libpayload
 	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(LPCC) -fno-builtin -o $@ $(OBJS)
+	$(Q)$(LPCC) -o $@ $(OBJS)
 	$(Q)$(OBJCOPY) --only-keep-debug $@ sortbootorder.debug
 	$(Q)$(OBJCOPY) --strip-debug $@
 	$(Q)$(OBJCOPY) --add-gnu-debuglink=sortbootorder.debug $@
