@@ -37,16 +37,16 @@ include .xcompile
 
 src := $(CURDIR)
 srctree := $(src)
-tint_obj := $(src)/build
+sortbootorder_obj := $(src)/build
 
 LIBCONFIG_PATH := $(realpath ../../../libpayload)
-LIBPAYLOAD_DIR := $(tint_obj)/libpayload
+LIBPAYLOAD_DIR := $(sortbootorder_obj)/libpayload
 HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_DIR)/lib/libpayload.a)
 LIB_CONFIG ?= configs/defconfig-tinycurses
 
 # CFLAGS := -Wall -Werror -Os
 CFLAGS := -Wall -g -Os
-TARGET := tint
+TARGET := sortbootorder
 OBJS := $(TARGET).o engine.o io.o utils.o
 
 ARCH-y     := x86_32
@@ -69,9 +69,9 @@ all: $(TARGET).elf
 $(TARGET).elf: $(OBJS) libpayload
 	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
 	$(Q)$(LPCC) -o $@ $(OBJS)
-	$(Q)$(OBJCOPY) --only-keep-debug $@ tint.debug
+	$(Q)$(OBJCOPY) --only-keep-debug $@ sortbootorder.debug
 	$(Q)$(OBJCOPY) --strip-debug $@
-	$(Q)$(OBJCOPY) --add-gnu-debuglink=tint.debug $@
+	$(Q)$(OBJCOPY) --add-gnu-debuglink=sortbootorder.debug $@
 
 %.o: %.c libpayload
 	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
@@ -89,7 +89,7 @@ libpayload:
 	$(Q)printf "Building libpayload @ $(LIBCONFIG_PATH).\n"
 	$(Q)make -C $(LIBCONFIG_PATH) distclean
 	$(Q)make -C $(LIBCONFIG_PATH) defconfig KBUILD_DEFCONFIG=$(LIB_CONFIG)
-	$(Q)make -C $(LIBCONFIG_PATH) DESTDIR=$(tint_obj) install
+	$(Q)make -C $(LIBCONFIG_PATH) DESTDIR=$(sortbootorder_obj) install
 endif
 
 clean:
@@ -97,7 +97,7 @@ clean:
 	$(Q)rm .xcompile
 
 distclean: clean
-	$(Q)rm -rf $(tint_obj)
+	$(Q)rm -rf $(sortbootorder_obj)
 
 
 .PHONY: all clean do-it-all depend with-depends without-depends debian postinst
