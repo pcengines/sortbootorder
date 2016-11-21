@@ -336,7 +336,7 @@ static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 ma
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 	int i = 0;
 	int k = 0;
-	int j;
+	int j, ret;
 	char cbfs_formatted_list[MAX_DEVICES * MAX_LENGTH];
 	struct spi_flash *flash;
 	u32 nvram_pos;
@@ -360,7 +360,10 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 		printf("Could not find SPI device\n");
 	else {
 		printf("Erasing Flash size 0x%x @ 0x%x\n", FLASH_SIZE_CHUNK, flash_address);
-		flash->erase(flash, flash_address, FLASH_SIZE_CHUNK);
+		ret = flash->erase(flash, flash_address, FLASH_SIZE_CHUNK);
+		if (ret) {
+			printf("Erase failed, ret: %d\n", ret);
+		}
 		flash->spi->rw = SPI_WRITE_FLAG;
 		printf("Writing %d bytes @ 0x%x\n", i, flash_address);
 		for (nvram_pos = 0; nvram_pos < (i & 0xFC); nvram_pos += 4) {
