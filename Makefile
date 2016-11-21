@@ -67,7 +67,7 @@ all: Makefile $(TARGET).elf
 
 $(TARGET).elf: $(OBJS) libpayload
 	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(LPCC) -o $@ $(OBJS)
+	$(Q)$(LPCC) -fno-builtin -o $@ $(OBJS)
 	$(Q)$(OBJCOPY) --only-keep-debug $@ sortbootorder.debug
 	$(Q)$(OBJCOPY) --strip-debug $@
 	$(Q)$(OBJCOPY) --add-gnu-debuglink=sortbootorder.debug $@
