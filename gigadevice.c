@@ -220,7 +220,7 @@ struct spi_flash *spi_flash_probe_gigadevice(struct spi_slave *spi, u8 *idcode)
 	page_size = 1 << params->l2_page_size;
 
 	stm->flash.write = gigadevice_write;
-	stm->flash.erase = gigadevice_erase;
+	stm->flash.spi_erase = gigadevice_erase;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
 	stm->flash.read = spi_flash_cmd_read_slow;
 #else

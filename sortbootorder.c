@@ -360,7 +360,7 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 		printf("Could not find SPI device\n");
 	else {
 		printf("Erasing Flash size 0x%x @ 0x%x\n", FLASH_SIZE_CHUNK, flash_address);
-		ret = flash->erase(flash, flash_address, FLASH_SIZE_CHUNK);
+		ret = flash->spi_erase(flash, flash_address, FLASH_SIZE_CHUNK);
 		if (ret) {
 			printf("Erase failed, ret: %d\n", ret);
 		}
