@@ -47,7 +47,7 @@ LIB_CONFIG ?= configs/defconfig-tinycurses
 # CFLAGS := -Wall -Werror -Os
 CFLAGS := -Wall -g -Os
 TARGET := sortbootorder
-OBJS := $(TARGET).o engine.o io.o utils.o
+OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
 
 ARCH-y     := x86_32
 
@@ -63,8 +63,7 @@ ifneq ($(V),1)
 Q := @
 endif
 
-all: $(TARGET).elf
-#	printf" CC   $(CC)\n"
+all: Makefile $(TARGET).elf
 
 $(TARGET).elf: $(OBJS) libpayload
 	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
@@ -100,4 +99,4 @@ distclean: clean
 	$(Q)rm -rf $(sortbootorder_obj)
 
 
-.PHONY: all clean do-it-all depend with-depends without-depends debian postinst
+.PHONY: all clean distclean do-it-all depend with-depends without-depends debian postinst
