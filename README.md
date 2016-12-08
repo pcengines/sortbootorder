@@ -10,8 +10,8 @@ provided [here](https://github.com/pcengines/apu2-documentation).
 ## Building
 
 ```
-cd coreboot-apu2b-20160304/
-git clone https://github.com/pcengines/sortbootorder.git payloads/pcengines/sortbootorder
+cd coreboot-${REL}
+git clone https://github.com/pcengines/sortbootorder.git -b v${REL} payloads/pcengines/sortbootorder
 cd payloads/libpayload
 make defconfig
 cp /xgcc/.xcompile-libpayload .xcompile
