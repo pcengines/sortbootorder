@@ -10,15 +10,15 @@ provided [here](https://github.com/pcengines/apu2-documentation).
 ## Building
 
 ```
-cd coreboot-${BR_NAME}
+cd && cd coreboot-${BR_NAME}
 git clone https://github.com/pcengines/sortbootorder.git -b ${BR_NAME} payloads/pcengines/sortbootorder
 cd payloads/libpayload
-make defconfig
-cp /xgcc/.xcompile-libpayload .xcompile
-make
+make clean && make defconfig
+wget https://raw.githubusercontent.com/pcengines/apu2-documentation/master/xcompile/.apu2-builder-xcompile-libpayload -O .xcompile
+make -j$(nproc)
 make install
 cd ../pcengines/sortbootorder
-make
+make -j$(nproc)
 ```
 
 For adding `sortbootorder` to `coreboot.rom` image please follow
