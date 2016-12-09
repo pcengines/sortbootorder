@@ -100,7 +100,7 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-	printf("\n### PC Engines apu2 setup v1.3 ###\n");
+	printf("\n### PC Engines apu2 setup v4.0.2 ###\n");
 
 	// Find out where the bootorder file is in rom
 	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
