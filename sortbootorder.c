@@ -22,7 +22,7 @@
 #include "spi.h"
 
 /*** defines ***/
-#define VERSION            "v4.0.4"
+#define VERSION            "v4.0.3"
 #define CONFIG_SPI_FLASH_NO_FAST_READ
 #define BOOTORDER_FILE     "bootorder"
 #define BOOTORDER_DEF      "bootorder_def"
