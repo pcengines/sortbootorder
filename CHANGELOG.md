@@ -2,10 +2,14 @@ Change log for PC Engines sortbootorder
 =======================================
 
 Releases 4.0.x are based on PC Engines 20160304 release.
-Releases 4.5.x are based on mainline support submitted in 
+Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.3] - 2017-01-03
+### Added
+- UART C and D toggling
+
 ## [v4.0.2] - 2016-12-09
 ### Changed
 - versioning scheme to compatible with coreboot releases
@@ -41,7 +45,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.2...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.3...coreboot-4.0.x
+[v4.0.3]: https://github.com/pcengines/sortbootorder/compare/v4.0.2...v4.0.3
 [v4.0.2]: https://github.com/pcengines/sortbootorder/compare/v4.0.1...v4.0.2
 [v4.5.2]: https://github.com/pcengines/sortbootorder/compare/v4.0.1...v4.5.2
 [v4.0.1]: https://github.com/pcengines/sortbootorder/compare/f652a858ff905f17688d841f866c2dedb371fb24...v4.0.1
