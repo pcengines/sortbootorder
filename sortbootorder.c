@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2013-2014 Sage Electronic Engineering, LLC
- * Copyright (C) 2014-2016 PC Engines GmbH
+ * Copyright (C) 2014-2017 PC Engines GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -20,6 +20,7 @@
 #include <cbfs.h>
 #include <curses.h>
 #include "spi.h"
+#include "version.h"
 
 /*** defines ***/
 #define CONFIG_SPI_FLASH_NO_FAST_READ
@@ -100,7 +101,7 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-	printf("\n### PC Engines apu2 setup v1.3 ###\n");
+	printf("\n### PC Engines apu2 setup %s ###\n", SORTBOOTORDER_VER);
 
 	// Find out where the bootorder file is in rom
 	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
