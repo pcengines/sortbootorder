@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2013-2014 Sage Electronic Engineering, LLC
- * Copyright (C) 2014-2016 PC Engines GmbH
+ * Copyright (C) 2014-2017 PC Engines GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -20,6 +20,7 @@
 #include <cbfs.h>
 #include <curses.h>
 #include "spi.h"
+#include "version.h"
 
 /*** defines ***/
 #define CONFIG_SPI_FLASH_NO_FAST_READ
@@ -89,6 +90,7 @@ int main(void) {
 	char *ipxe_str;
 	char *scon_str;
 	char *usb_str;
+	struct cbfs_handle *bootorder_handle;
 
 	// Set to enabled because enable toggle is not (yet) implemented for these devices
 	device_toggle[SDCARD] = 1;
@@ -100,12 +102,12 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-	printf("\n### PC Engines apu2 setup v1.3 ###\n");
+	printf("\n### PC Engines apu2 setup %s ###\n", SORTBOOTORDER_VER);
 
 	// Find out where the bootorder file is in rom
-	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
-	flash_address = (int)tmp;
-	if ((u32)tmp & 0xfff)
+	bootorder_handle = cbfs_get_handle( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE );
+	flash_address = bootorder_handle->media_offset + bootorder_handle->content_offset;
+	if ((u32)flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 
 	// Get required files from CBFS
