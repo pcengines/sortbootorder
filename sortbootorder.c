@@ -90,6 +90,7 @@ int main(void) {
 	char *ipxe_str;
 	char *scon_str;
 	char *usb_str;
+	struct cbfs_handle *bootorder_handle;
 
 	// Set to enabled because enable toggle is not (yet) implemented for these devices
 	device_toggle[SDCARD] = 1;
@@ -104,9 +105,9 @@ int main(void) {
 	printf("\n### PC Engines apu2 setup %s ###\n", SORTBOOTORDER_VER);
 
 	// Find out where the bootorder file is in rom
-	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
-	flash_address = (int)tmp;
-	if ((u32)tmp & 0xfff)
+	bootorder_handle = cbfs_get_handle( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE );
+	flash_address = bootorder_handle->media_offset + bootorder_handle->content_offset;
+	if ((u32)flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 
 	// Get required files from CBFS
