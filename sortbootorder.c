@@ -58,6 +58,7 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines,
 static u8 ipxe_toggle;
 static u8 serial_toggle;
 static u8 usb_toggle;
+static u8 sga_toggle;
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
@@ -75,6 +76,7 @@ static u8 device_toggle[MAX_DEVICES];
  *        - Serial console disable / enable
  *        - Network / IPXE disable / enable
  *        - USB boot disable / enable
+ *        - SgaBios disable / enable
  *        - Exit with or without saving order
  */
 
@@ -90,6 +92,7 @@ int main(void) {
 	char *ipxe_str;
 	char *scon_str;
 	char *usb_str;
+	char *sga_str;
 	struct cbfs_handle *bootorder_handle;
 
 	// Set to enabled because enable toggle is not (yet) implemented for these devices
@@ -128,6 +131,10 @@ int main(void) {
 	usb_str += strlen("usben");
 	usb_toggle = usb_str ? strtoul(usb_str, NULL, 10) : 1;
 
+	sga_str = cbfs_find_string("sgaen", BOOTORDER_FILE);
+	sga_str += strlen("sgaen");
+	sga_toggle = sga_str ? strtoul(sga_str, NULL, 10) : 0;
+
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
 	int_ids( bootlist, max_lines, bootlist_def_ln );
 
@@ -154,11 +161,15 @@ int main(void) {
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
+			case 'l':
+			case 'L':
+				sga_toggle ^= 0x1;
 			case 's':
 			case 'S':
 				update_tag_value(bootlist, max_lines, "scon", serial_toggle + '0');
 				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, max_lines, "usben", usb_toggle + '0');
+				update_tag_value(bootlist, max_lines, "sgaen", sga_toggle + '0');
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
 			case 'x':
@@ -250,6 +261,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
+	printf("  u Serial console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
