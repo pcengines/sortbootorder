@@ -52,7 +52,7 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 static int get_line_number(u8 line_start, u8 line_end, char key );
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines);
-static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, const char * tag, char value);
+static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value);
 
 /*** local variables ***/
 static u8 ipxe_toggle;
@@ -164,12 +164,13 @@ int main(void) {
 			case 'l':
 			case 'L':
 				sga_toggle ^= 0x1;
+				break;
 			case 's':
 			case 'S':
-				update_tag_value(bootlist, max_lines, "scon", serial_toggle + '0');
-				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
-				update_tag_value(bootlist, max_lines, "usben", usb_toggle + '0');
-				update_tag_value(bootlist, max_lines, "sgaen", sga_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "scon", serial_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "sgaen", sga_toggle + '0');
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
 			case 'x':
@@ -261,7 +262,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (serial_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
-	printf("  u Serial console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
+	printf("  l Serial console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
@@ -305,15 +306,15 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 		else
 			char_cnt++;
 
-		if ( *line_count > MAX_DEVICES) {
+		if (*line_count > MAX_DEVICES) {
 			printf("aborting due to excessive line_count\n");
 			break;
 		}
-		if ( char_cnt > MAX_LENGTH) {
+		if (char_cnt > MAX_LENGTH) {
 			printf("aborting due to excessive char count\n");
 			break;
 		}
-		if ( cbfs_offset > (MAX_LENGTH*MAX_DEVICES)) {
+		if (cbfs_offset > (MAX_LENGTH*MAX_DEVICES)) {
 			printf("aborting due to excessive cbfs ptr length\n");
 			break;
 		}
@@ -388,14 +389,28 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 }
 
 /*******************************************************************************/
-static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, const char * tag, char value)
+static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value)
 {
 	int i;
+	bool found = FALSE;
 
-	for (i = 0; i < max_lines; i++) {
+	for (i = 0; i < *max_lines; i++) {
 		if (!strncmp(tag, &buffer[i][0], strlen(tag))) {
+			found = TRUE;
 			buffer[i][strlen(tag)] = value;
 			break;
 		}
+	}
+
+	if (!found) {
+		if ((*max_lines + 1) > MAX_DEVICES) {
+			return;
+		}
+		strcpy(&buffer[*max_lines][0], tag);
+		buffer[*max_lines][strlen(tag)] = value;
+		buffer[*max_lines][strlen(tag)+1] = '\r';
+		buffer[*max_lines][strlen(tag)+2] = '\n';
+		buffer[*max_lines][strlen(tag)+3] = '0';
+		(*max_lines)++;
 	}
 }
