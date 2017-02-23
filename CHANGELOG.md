@@ -8,6 +8,12 @@ Releases 4.5.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.5.4] - 2017-02-23
+### Changed
+- adds new option tag when there isn't one in bootorder file
+- removed Serial console option - not used in mainline release
+- added Serial console redirection option - controls loading the sgabios oprom
+
 ## [v4.5.3] - 2017-01-12
 ### Fixed
 - bootorder file alignment
