@@ -28,8 +28,10 @@
 ##
 
 # Sample libpayload Makefile.
-include ../../libpayload/.xcompile
-include ../../libpayload/.config
+
+COREBOOT_ROOT ?= ../coreboot
+include $(COREBOOT_ROOT)/payloads/libpayload/.xcompile
+include $(COREBOOT_ROOT)/payloads/libpayload/.config
 
 ARCH-$(CONFIG_LP_ARCH_ARMV)    := arm
 ARCH-$(CONFIG_LP_ARCH_POWERPC) := powerpc
@@ -37,7 +39,7 @@ ARCH-$(CONFIG_LP_ARCH_X86)     := i386
 
 CC := $(CC_$(ARCH-y))
 AS := $(AS_$(ARCH-y))
-LIBPAYLOAD_DIR := ../../libpayload/install/libpayload
+LIBPAYLOAD_DIR := $(COREBOOT_ROOT)/payloads/libpayload/install/libpayload
 XCC := CC="$(CC)" $(LIBPAYLOAD_DIR)/bin/lpgcc
 XAS := AS="$(AS)" $(LIBPAYLOAD_DIR)/bin/lpas
 CFLAGS := -Wall -Werror -Os
