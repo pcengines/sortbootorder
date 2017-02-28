@@ -60,7 +60,7 @@ static inline int spi_flash_write(struct spi_flash *flash, u32 offset,
 static inline int spi_flash_erase(struct spi_flash *flash, u32 offset,
 		size_t len)
 {
-	return flash->erase(flash, offset, len);
+	return flash->spi_erase(flash, offset, len);
 }
 
 #endif /* _SPI_FLASH_H_ */

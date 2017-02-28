@@ -60,7 +60,7 @@ struct spi_flash {
 	int		(*read)(struct spi_flash *flash, u32 offset, size_t len, void *buf);
 	int		(*write)(struct spi_flash *flash, u32 offset, size_t len,
 			const void *buf);
-	int		(*erase)(struct spi_flash *flash, u32 offset, size_t len);
+	int		(*spi_erase)(struct spi_flash *flash, u32 offset, size_t len);
 };
 
 struct spi_slave {
