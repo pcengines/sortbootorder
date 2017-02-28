@@ -153,7 +153,7 @@ struct spi_flash *spi_flash_probe_eon(struct spi_slave *spi, u8 *idcode)
 	eon->flash.name = params->name;
 
 	eon->flash.write = eon_write;
-	eon->flash.erase = eon_erase;
+	eon->flash.spi_erase = eon_erase;
 	eon->flash.read = spi_flash_cmd_read_fast;
 	eon->flash.sector_size = params->page_size * params->pages_per_sector
 	    * params->sectors_per_block;

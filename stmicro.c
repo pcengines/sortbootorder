@@ -243,7 +243,7 @@ struct spi_flash *spi_flash_probe_stmicro(struct spi_slave *spi, u8 * idcode)
 	stm->flash.name = params->name;
 
 	stm->flash.write = stmicro_write;
-	stm->flash.erase = stmicro_erase;
+	stm->flash.spi_erase = stmicro_erase;
 	stm->flash.read = spi_flash_cmd_read_fast;
 	stm->flash.sector_size = params->page_size * params->pages_per_sector;
 	stm->flash.size = stm->flash.sector_size * params->nr_sectors;

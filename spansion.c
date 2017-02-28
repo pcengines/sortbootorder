@@ -233,7 +233,7 @@ struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
 	spsn->flash.name = params->name;
 
 	spsn->flash.write = spansion_write;
-	spsn->flash.erase = spansion_erase;
+	spsn->flash.spi_erase = spansion_erase;
 	spsn->flash.read = spi_flash_cmd_read_fast;
 	spsn->flash.sector_size = params->page_size * params->pages_per_sector;
 	spsn->flash.size = spsn->flash.sector_size * params->nr_sectors;
