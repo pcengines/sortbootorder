@@ -29,7 +29,7 @@
 
 # Sample libpayload Makefile.
 
-COREBOOT_ROOT ?= ../coreboot
+COREBOOT_ROOT ?= ../../..
 include $(COREBOOT_ROOT)/payloads/libpayload/.xcompile
 include $(COREBOOT_ROOT)/payloads/libpayload/.config
 
