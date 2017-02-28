@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2013-2014 Sage Electronic Engineering, LLC
- * Copyright (C) 2014-2016 PC Engines GmbH
+ * Copyright (C) 2014-2017 PC Engines GmbH
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -20,9 +20,9 @@
 #include <cbfs.h>
 #include <curses.h>
 #include "spi.h"
+#include "version.h"
 
 /*** defines ***/
-#define VERSION            "v4.0.3"
 #define CONFIG_SPI_FLASH_NO_FAST_READ
 #define BOOTORDER_FILE     "bootorder"
 #define BOOTORDER_DEF      "bootorder_def"
@@ -52,12 +52,12 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 static int get_line_number(u8 line_start, u8 line_end, char key );
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines);
-static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, const char * tag, char value);
+static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value);
 
 /*** local variables ***/
 static u8 ipxe_toggle;
 static u8 console_toggle;
-static u8 sgabios_toggle;
+static u8 sga_toggle;
 static u8 usb_toggle;
 static u8 uartc_toggle;
 static u8 uartd_toggle;
@@ -78,6 +78,7 @@ static u8 device_toggle[MAX_DEVICES];
  *        - Serial console disable / enable
  *        - Network / IPXE disable / enable
  *        - USB boot disable / enable
+ *        - SgaBios disable / enable
  *        - Exit with or without saving order
  */
 
@@ -102,7 +103,7 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-	printf("\n### PC Engines apu2 setup %s ###\n", VERSION);
+	printf("\n### PC Engines apu2 setup %s ###\n", SORTBOOTORDER_VER);
 
 	// Find out where the bootorder file is in rom
 	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
@@ -126,7 +127,7 @@ int main(void) {
 
 	token = cbfs_find_string("sgaen", BOOTORDER_FILE);
 	token += strlen("sgaen");
-	sgabios_toggle = token ? strtoul(token, NULL, 10) : 1;
+	sga_toggle = token ? strtoul(token, NULL, 10) : 1;
 
 	token = cbfs_find_string("uartc", BOOTORDER_FILE);
 	token += strlen("uartc");
@@ -160,7 +161,7 @@ int main(void) {
 				break;
 			case 'l':
 			case 'L':
-				sgabios_toggle ^= 0x1;
+				sga_toggle ^= 0x1;
 				break;
 			case 'n':
 			case 'N':
@@ -180,12 +181,12 @@ int main(void) {
 				break;
 			case 's':
 			case 'S':
-				update_tag_value(bootlist, max_lines, "scon", console_toggle + '0');
-				update_tag_value(bootlist, max_lines, "sgaen", sgabios_toggle + '0');
-				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
-				update_tag_value(bootlist, max_lines, "usben", usb_toggle + '0');
-				update_tag_value(bootlist, max_lines, "uartc", uartc_toggle + '0');
-				update_tag_value(bootlist, max_lines, "uartd", uartd_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "sgaen", sga_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
 			case 'x':
@@ -276,7 +277,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  r Restore boot order defaults\n");
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
-	printf("  l Serial port redirection - Currently %s\n", (sgabios_toggle) ? "Enabled" : "Disabled");
+	printf("  l Serial console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
@@ -323,15 +324,15 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 		else
 			char_cnt++;
 
-		if ( *line_count > MAX_DEVICES) {
+		if (*line_count > MAX_DEVICES) {
 			printf("aborting due to excessive line_count\n");
 			break;
 		}
-		if ( char_cnt > MAX_LENGTH) {
+		if (char_cnt > MAX_LENGTH) {
 			printf("aborting due to excessive char count\n");
 			break;
 		}
-		if ( cbfs_offset > (MAX_LENGTH*MAX_DEVICES)) {
+		if (cbfs_offset > (MAX_LENGTH*MAX_DEVICES)) {
 			printf("aborting due to excessive cbfs ptr length\n");
 			break;
 		}
@@ -368,7 +369,7 @@ static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 ma
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 	int i = 0;
 	int k = 0;
-	int j;
+	int j, ret;
 	char cbfs_formatted_list[MAX_DEVICES * MAX_LENGTH];
 	struct spi_flash *flash;
 	u32 nvram_pos;
@@ -406,14 +407,28 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 }
 
 /*******************************************************************************/
-static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, const char * tag, char value)
+static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value)
 {
 	int i;
+	bool found = FALSE;
 
-	for (i = 0; i < max_lines; i++) {
+	for (i = 0; i < *max_lines; i++) {
 		if (!strncmp(tag, &buffer[i][0], strlen(tag))) {
+			found = TRUE;
 			buffer[i][strlen(tag)] = value;
 			break;
 		}
+	}
+
+	if (!found) {
+		if ((*max_lines + 1) > MAX_DEVICES) {
+			return;
+		}
+		strcpy(&buffer[*max_lines][0], tag);
+		buffer[*max_lines][strlen(tag)] = value;
+		buffer[*max_lines][strlen(tag)+1] = '\r';
+		buffer[*max_lines][strlen(tag)+2] = '\n';
+		buffer[*max_lines][strlen(tag)+3] = '0';
+		(*max_lines)++;
 	}
 }
