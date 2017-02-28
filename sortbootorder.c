@@ -57,6 +57,7 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines,
 /*** local variables ***/
 static u8 ipxe_toggle;
 static u8 console_toggle;
+static u8 sgabios_toggle;
 static u8 usb_toggle;
 static u8 uartc_toggle;
 static u8 uartd_toggle;
@@ -123,6 +124,10 @@ int main(void) {
 	token += strlen("scon");
 	console_toggle = token ? strtoul(token, NULL, 10) : 1;
 
+	token = cbfs_find_string("sgaen", BOOTORDER_FILE);
+	token += strlen("sgaen");
+	sgabios_toggle = token ? strtoul(token, NULL, 10) : 1;
+
 	token = cbfs_find_string("uartc", BOOTORDER_FILE);
 	token += strlen("uartc");
 	uartc_toggle = token ? strtoul(token, NULL, 10) : 0;
@@ -153,6 +158,10 @@ int main(void) {
 			case 'T':
 				console_toggle ^= 0x1;
 				break;
+			case 'l':
+			case 'L':
+				sgabios_toggle ^= 0x1;
+				break;
 			case 'n':
 			case 'N':
 				ipxe_toggle ^= 0x1;
@@ -172,6 +181,7 @@ int main(void) {
 			case 's':
 			case 'S':
 				update_tag_value(bootlist, max_lines, "scon", console_toggle + '0');
+				update_tag_value(bootlist, max_lines, "sgaen", sgabios_toggle + '0');
 				update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, max_lines, "usben", usb_toggle + '0');
 				update_tag_value(bootlist, max_lines, "uartc", uartc_toggle + '0');
@@ -266,6 +276,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  r Restore boot order defaults\n");
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
+	printf("  l Serial port redirection - Currently %s\n", (sgabios_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
