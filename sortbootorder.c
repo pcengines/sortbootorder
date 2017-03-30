@@ -59,6 +59,7 @@ static u8 ipxe_toggle;
 static u8 console_toggle;
 static u8 sga_toggle;
 static u8 usb_toggle;
+static u8 ehci0_toggle;
 static u8 uartc_toggle;
 static u8 uartd_toggle;
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
@@ -79,6 +80,7 @@ static u8 device_toggle[MAX_DEVICES];
  *        - Network / IPXE disable / enable
  *        - USB boot disable / enable
  *        - SgaBios disable / enable
+ *        - EHCI0 enable/disable
  *        - Exit with or without saving order
  */
 
@@ -141,6 +143,10 @@ int main(void) {
 	token += strlen("usben");
 	usb_toggle = token ? strtoul(token, NULL, 10) : 1;
 
+	token = cbfs_find_string("ehcien", BOOTORDER_FILE);
+	token += strlen("ehcien");
+	ehci0_toggle = token ? strtoul(token, NULL, 10) : 1;
+
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
 	int_ids( bootlist, max_lines, bootlist_def_ln );
 
@@ -179,6 +185,10 @@ int main(void) {
 			case 'P':
 				uartd_toggle ^= 0x1;
 				break;
+			case 'e':
+			case 'E':
+				ehci0_toggle ^= 0x1;
+				break;
 			case 's':
 			case 'S':
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
@@ -187,6 +197,7 @@ int main(void) {
 				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
 			case 'x':
@@ -279,6 +290,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
 	printf("  l Serial console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
+	printf("  e EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
