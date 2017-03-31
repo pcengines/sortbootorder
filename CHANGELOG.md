@@ -7,6 +7,11 @@ Releases 4.5.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.0.5.1] - 2017-03-31
+### Changed
+- changed the name to `PC Engines apu setup` in welcome string
+- changed `Serial console redirection` to `Legacy console redirection`
+
 ## [v4.0.5] - 2017-03-30
 ### Added
 - EHCI0 controller disable/enable option
@@ -57,7 +62,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.5...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.5.1...coreboot-4.0.x
+[v4.0.5.1]: https://github.com/pcengines/sortbootorder/compare/v4.0.5...v4.0.5.1
 [v4.0.5]: https://github.com/pcengines/sortbootorder/compare/v4.0.4...v4.0.5
 [v4.0.4]: https://github.com/pcengines/sortbootorder/compare/v4.0.3...v4.0.4
 [v4.0.3]: https://github.com/pcengines/sortbootorder/compare/v4.0.2...v4.0.3
