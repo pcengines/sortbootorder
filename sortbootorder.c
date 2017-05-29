@@ -42,7 +42,9 @@
 #define SDCARD             4
 #define MSATA              5
 #define SATA               6
-#define IPXE               7
+#define MPCIE1_SATA1       7
+#define MPCIE1_SATA2       8
+#define IPXE               9
 
 /*** prototypes ***/
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
@@ -99,6 +101,8 @@ int main(void) {
 	device_toggle[SDCARD] = 1;
 	device_toggle[MSATA] = 1;
 	device_toggle[SATA] = 1;
+	device_toggle[MPCIE1_SATA1] = 1;
+	device_toggle[MPCIE1_SATA2] = 1;
 
 #ifdef CONFIG_USB /* this needs to be done in order to use the USB keyboard */
 	usb_initialize();
