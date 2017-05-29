@@ -367,8 +367,8 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 		}
 		flash->spi->rw = SPI_WRITE_FLAG;
 		printf("Writing %d bytes @ 0x%x\n", i, flash_address);
-		/* write first 256 bytes */
-		for (nvram_pos = 0; nvram_pos < (i & 0xFC); nvram_pos += 4) {
+		/* write first 512 bytes */
+		for (nvram_pos = 0; nvram_pos < (i & 0x1FC); nvram_pos += 4) {
 			flash->write(flash, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
 		}
 		/* write remaining filler characters in one run */
