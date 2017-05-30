@@ -8,6 +8,18 @@ Releases 4.5.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.5.5] - 2017-05-30
+### Added
+- Add option in setup for setting `mPCIe1 SATA` priority (ASM106X cards)
+
+### Changed
+- Letters reserved for device sorting: from `a-m` to `a-j`
+- Increase number of significant characters written to `bootorder` file from
+  256 to 512 (`flash_write` function)
+
+### Fixed
+- Change `ehci enable` letter from `e` to `h` (conflict with `ipxe` priority)
+
 ## [v4.5.4] - 2017-02-23
 ### Changed
 - adds new option tag when there isn't one in bootorder file
@@ -57,7 +69,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.3...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.5...coreboot-4.0.x
+[v4.5.5]: https://github.com/pcengines/sortbootorder/compare/v4.5.4...v4.5.5
 [v4.5.4]: https://github.com/pcengines/sortbootorder/compare/v4.5.3...v4.5.4
 [v4.5.3]: https://github.com/pcengines/sortbootorder/compare/v4.5.2...v4.5.3
 [v4.0.3]: https://github.com/pcengines/sortbootorder/compare/v4.0.2...v4.0.3
