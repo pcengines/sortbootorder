@@ -210,7 +210,7 @@ int main(void) {
 				outb(0x06, 0x0cf9); /* reset */
 				break;
 			default:
-				if (key >= 'a' && key <= 'm' ) {
+				if (key >= 'a' && key <= 'j' ) {
 					line_start = 0;
 					while ((line_number =  get_line_number(line_start, max_lines, key)) > line_start) {
 						move_boot_list( bootlist, line_number , max_lines );
