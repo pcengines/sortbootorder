@@ -189,8 +189,8 @@ int main(void) {
 			case 'P':
 				uartd_toggle ^= 0x1;
 				break;
-			case 'e':
-			case 'E':
+			case 'h':
+			case 'H':
 				ehci0_toggle ^= 0x1;
 				break;
 			case 's':
@@ -294,7 +294,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
 	printf("  l Legacy console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
-	printf("  e EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
+	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
