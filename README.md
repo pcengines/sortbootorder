@@ -1,5 +1,4 @@
-Sortbootorder
--------------
+## Sortbootorder
 
 This repository contains source code of `sortbootorder` payload that sorts and
 saves boot order in flash.
