@@ -42,7 +42,9 @@
 #define SDCARD             4
 #define MSATA              5
 #define SATA               6
-#define IPXE               7
+#define MPCIE1_SATA1       7
+#define MPCIE1_SATA2       8
+#define IPXE               9
 
 /*** prototypes ***/
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
@@ -95,6 +97,8 @@ int main(void) {
 	device_toggle[SDCARD] = 1;
 	device_toggle[MSATA] = 1;
 	device_toggle[SATA] = 1;
+	device_toggle[MPCIE1_SATA1] = 1;
+	device_toggle[MPCIE1_SATA2] = 1;
 
 #ifdef CONFIG_USB /* this needs to be done in order to use the USB keyboard */
 	usb_initialize();
@@ -166,7 +170,7 @@ int main(void) {
 				outb(0x06, 0x0cf9); /* reset */
 				break;
 			default:
-				if (key >= 'a' && key <= 'm' ) {
+				if (key >= 'a' && key <= 'j' ) {
 					line_start = 0;
 					while ((line_number =  get_line_number(line_start, max_lines, key)) > line_start) {
 						move_boot_list( bootlist, line_number , max_lines );
@@ -367,9 +371,11 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 		}
 		flash->spi->rw = SPI_WRITE_FLAG;
 		printf("Writing %d bytes @ 0x%x\n", i, flash_address);
-		for (nvram_pos = 0; nvram_pos < (i & 0xFC); nvram_pos += 4) {
+		/* write first 512 bytes */
+		for (nvram_pos = 0; nvram_pos < (i & 0x1FC); nvram_pos += 4) {
 			flash->write(flash, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
 		}
+		/* write remaining filler characters in one run */
 		flash->write(flash, nvram_pos + flash_address, sizeof(i % 4), (u32 *)(cbfs_formatted_list + nvram_pos));
 	}
 }
