@@ -37,7 +37,7 @@ key.
 ### bootorder file
 
 Sortbootorder manages `bootorder` file which is initially shipped from
-[coreboot repository](https://github.com/pcengines/coreboot/blob/coreboot-4.5.x/src/mainboard/pcengines/apu2/bootorder)
+[coreboot repository](https://github.com/pcengines/coreboot/blob/coreboot-4.0.x/src/mainboard/pcengines/apu2/bootorder)
 This is binary file that has to be 4096 bytes long in order to entirely fill
 one FLASH sector.
 
@@ -71,7 +71,7 @@ documentation for more insight.
 
 ### bootorder_map file
 
-[bootorder_map](https://github.com/pcengines/coreboot/blob/coreboot-4.5.x/src/mainboard/pcengines/apu2/bootorder_map)
+[bootorder_map](https://github.com/pcengines/coreboot/blob/coreboot-4.0.x/src/mainboard/pcengines/apu2/bootorder_map)
 file is used to match device letter and description with corresponding node from
 `bootorder` file.
 
@@ -101,7 +101,7 @@ file is used to match device letter and description with corresponding node from
   ```
 
 Default bootorder list settings are taken from
-[bootorder_def file](https://github.com/pcengines/coreboot/blob/coreboot-4.5.x/src/mainboard/pcengines/apu2/bootorder_def).
+[bootorder_def file](https://github.com/pcengines/coreboot/blob/coreboot-4.0.x/src/mainboard/pcengines/apu2/bootorder_def).
 They can be restored by hitting `r` key. It only restores to default boot
 list order, not other specific settings such as `USB enable` or `serial console
 enable`.
