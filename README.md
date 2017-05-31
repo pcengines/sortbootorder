@@ -7,7 +7,7 @@ saves boot order in flash.
 
 ### Example menu view
 
-Exact list me be different, depending on BIOS release version.
+Exact list may be different, depending on BIOS release version.
 
   ```
   a USB 1 / USB 2 SS and HS
