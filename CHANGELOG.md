@@ -72,7 +72,7 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.5.1...coreboot-4.0.x
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.0.6...coreboot-4.0.x
 [v4.0.6]: https://github.com/pcengines/sortbootorder/compare/v4.0.5.1...v4.0.6
 [v4.0.5.1]: https://github.com/pcengines/sortbootorder/compare/v4.0.5...v4.0.5.1
 [v4.0.5]: https://github.com/pcengines/sortbootorder/compare/v4.0.4...v4.0.5
