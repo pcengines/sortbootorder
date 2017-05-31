@@ -42,7 +42,9 @@
 #define SDCARD             4
 #define MSATA              5
 #define SATA               6
-#define IPXE               7
+#define MPCIE1_SATA1       7
+#define MPCIE1_SATA2       8
+#define IPXE               9
 
 /*** prototypes ***/
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
@@ -99,6 +101,8 @@ int main(void) {
 	device_toggle[SDCARD] = 1;
 	device_toggle[MSATA] = 1;
 	device_toggle[SATA] = 1;
+	device_toggle[MPCIE1_SATA1] = 1;
+	device_toggle[MPCIE1_SATA2] = 1;
 
 #ifdef CONFIG_USB /* this needs to be done in order to use the USB keyboard */
 	usb_initialize();
@@ -185,8 +189,8 @@ int main(void) {
 			case 'P':
 				uartd_toggle ^= 0x1;
 				break;
-			case 'e':
-			case 'E':
+			case 'h':
+			case 'H':
 				ehci0_toggle ^= 0x1;
 				break;
 			case 's':
@@ -206,7 +210,7 @@ int main(void) {
 				outb(0x06, 0x0cf9); /* reset */
 				break;
 			default:
-				if (key >= 'a' && key <= 'm' ) {
+				if (key >= 'a' && key <= 'j' ) {
 					line_start = 0;
 					while ((line_number =  get_line_number(line_start, max_lines, key)) > line_start) {
 						move_boot_list( bootlist, line_number , max_lines );
@@ -290,7 +294,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
 	printf("  l Legacy console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
-	printf("  e EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
+	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
