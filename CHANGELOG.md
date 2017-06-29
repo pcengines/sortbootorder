@@ -12,6 +12,9 @@ Releases 4.5.x are based on mainline support submitted in
 ### Added
 - Add option to enable/disable BIOS WP jumper opertaion
 
+### Changed
+- Use the same version for legacy and mainline builds
+
 ## [v4.5.5] - 2017-05-30
 ### Added
 - Add option in setup for setting `mPCIe1 SATA` priority (ASM106X cards)
@@ -23,6 +26,32 @@ Releases 4.5.x are based on mainline support submitted in
 
 ### Fixed
 - Change `ehci enable` letter from `e` to `h` (conflict with `ipxe` priority)
+
+## [v4.0.6] - 2017-05-30
+### Added
+- Add option in setup for setting `mPCIe1 SATA` priority (ASM106X cards)
+
+### Changed
+- Letters reserved for device sorting: from `a-m` to `a-j`
+
+### Fixed
+- Change `ehci enable` letter from `e` to `h` (conflict with `ipxe` priority)
+
+## [v4.0.5.1] - 2017-03-31
+### Changed
+- changed the name to `PC Engines apu setup` in welcome string
+- changed `Serial console redirection` to `Legacy console redirection`
+
+## [v4.0.5] - 2017-03-30
+### Added
+- EHCI0 controller disable/enable option
+
+## [v4.0.4] - 2017-02-28
+### Added
+- serial console redirection option (`SgaBIOS` enable) - by default enabled
+
+### Fixed
+- fixed writing bootorder files with sizes bigger than 255 bytes
 
 ## [v4.5.4] - 2017-02-23
 ### Changed
@@ -74,10 +103,14 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 - used proper way to access extended SPI registers
 
 [Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.5.6...master
-[v4.5.5]: https://github.com/pcengines/sortbootorder/compare/v4.5.5...v4.5.6
+[v4.5.6]: https://github.com/pcengines/sortbootorder/compare/v4.5.5...v4.5.6
 [v4.5.5]: https://github.com/pcengines/sortbootorder/compare/v4.5.4...v4.5.5
 [v4.5.4]: https://github.com/pcengines/sortbootorder/compare/v4.5.3...v4.5.4
 [v4.5.3]: https://github.com/pcengines/sortbootorder/compare/v4.5.2...v4.5.3
+[v4.0.6]: https://github.com/pcengines/sortbootorder/compare/v4.0.5.1...v4.0.6
+[v4.0.5.1]: https://github.com/pcengines/sortbootorder/compare/v4.0.5...v4.0.5.1
+[v4.0.5]: https://github.com/pcengines/sortbootorder/compare/v4.0.4...v4.0.5
+[v4.0.4]: https://github.com/pcengines/sortbootorder/compare/v4.0.3...v4.0.4
 [v4.0.3]: https://github.com/pcengines/sortbootorder/compare/v4.0.2...v4.0.3
 [v4.0.2]: https://github.com/pcengines/sortbootorder/compare/v4.0.1...v4.0.2
 [v4.5.2]: https://github.com/pcengines/sortbootorder/compare/v4.0.1...v4.5.2
