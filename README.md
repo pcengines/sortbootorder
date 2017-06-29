@@ -1,13 +1,34 @@
-## Sortbootorder
+Sortbootorder
+-------------
 
 This repository contains source code of `sortbootorder` payload that sorts and
 saves boot order in flash.
+
+## Contents
+
+<!-- TOC -->
+
+- [Contents](#contents)
+- [Theory of operation](#theory-of-operation)
+    - [Example menu view](#example-menu-view)
+    - [bootorder file](#bootorder-file)
+    - [bootorder_map file](#bootorder_map-file)
+    - [Default settings](#default-settings)
+    - [BIOS WP option](#bios-wp-option)
+- [Building](#building)
+    - [Manual build](#manual-build)
+    - [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)
+    - [Recent automated building process](#recent-automated-building-process)
+
+<!-- /TOC -->
 
 ## Theory of operation
 
 ### Example menu view
 
-Exact list may be different, depending on BIOS release version.
+> Exact list may be different, depending on BIOS release version.
+
+For coreboot mainline (4.5.x) version:
 
   ```
   a USB 1 / USB 2 SS and HS
@@ -19,8 +40,33 @@ Exact list may be different, depending on BIOS release version.
 
   r Restore boot order defaults
   n Network/PXE boot - Currently Disabled
-  l Serial console redirection - Currently Disabled
   u USB boot - Currently Enabled
+  l Legacy console redirection - Currently Disabled
+  w Enable BIOS write protect - Currently Disabled
+  x Exit setup without save
+  s Save configuration and exit
+  ```
+
+For coreboot legacy (4.0.x) version:
+
+  ```
+  a USB 1 / USB 2 SS and HS
+  b SDCARD
+  c mSATA
+  d SATA
+  e mPCIe1 SATA1 and SATA2
+  f iPXE (disabled)
+
+
+  r Restore boot order defaults
+  n Network/PXE boot - Currently Disabled
+  u USB boot - Currently Enabled
+  l Legacy console redirection - Currently Enabled
+  t Serial console - Currently Enabled
+  o UART C - Currently Enabled
+  p UART D - Currently Enabled
+  h EHCI0 controller - Currently Disabled
+  w Enable BIOS write protect - Currently Disabled
   x Exit setup without save
   s Save configuration and exit
   ```
@@ -98,7 +144,39 @@ They can be restored by hitting `r` key. It only restores to default boot
 list order, not other specific settings such as `USB enable` or `serial console
 enable`.
 
+### BIOS WP option
+
+`Enable BIOS write protect` option (`w`) enables or disables flash write
+protection feature. When enabled, then BIOS WP jumper (1-2 pins of J2) controls the possibility of writing to flash. When BIOS WP is shorted and option is
+enabled no writes to flash is possible, including disabling the write protect option itself and updating the BIOS is also not possible (using e.g. `flashrom` tool).
+
 ## Building
+
+### Manual build
+
+> coreboot is in `./coreboot-${BR_NAME}` directory
+
+```sh
+git clone https://github.com/pcengines/sortbootorder.git sortbootorder
+cd sortbootorder
+# for mainline coreboot (4.5.x)
+COREBOOT_ROOT=../coreboot-${BR_NAME} make distclean
+COREBOOT_ROOT=../coreboot-${BR_NAME} make
+# for legacy coreboot (4.0.x)
+COREBOOT_ROOT=../coreboot-${BR_NAME} make distclean
+COREBOOT_ROOT=../coreboot-${BR_NAME} COREBOOT_REL=legacy make
+```
+
+### Adding sortbootorder to coreboot.rom file
+
+```sh
+cd && cd coreboot-${BR_NAME}
+./build/cbfstool ./build/coreboot.rom remove -n img/setup
+./build/cbfstool ./build/coreboot.rom add-payload -f payloads/pcengines/sortbootorder/sortbootorder.elf -n img/setup -t payload
+```
+
+Above commands first remove already existing `img/setup` from CBFS and then add
+`sortbootorder.elf` as payload under the name `img/setup` to `coreboot.rom`.
 
 ### Recent automated building process
 
