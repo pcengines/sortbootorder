@@ -8,6 +8,10 @@ Releases 4.5.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.5.6] - 2017-06-29
+### Added
+- Add option to enable/disable BIOS WP jumper opertaion
+
 ## [v4.5.5] - 2017-05-30
 ### Added
 - Add option in setup for setting `mPCIe1 SATA` priority (ASM106X cards)
@@ -69,7 +73,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.5.5...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.5.6...master
+[v4.5.5]: https://github.com/pcengines/sortbootorder/compare/v4.5.5...v4.5.6
 [v4.5.5]: https://github.com/pcengines/sortbootorder/compare/v4.5.4...v4.5.5
 [v4.5.4]: https://github.com/pcengines/sortbootorder/compare/v4.5.3...v4.5.4
 [v4.5.3]: https://github.com/pcengines/sortbootorder/compare/v4.5.2...v4.5.3

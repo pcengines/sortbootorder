@@ -18,6 +18,6 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
-#define SORTBOOTORDER_VER "v4.5.5"
+#define SORTBOOTORDER_VER "v4.5.6"
 
 #endif /* _VERSION_H_ */
