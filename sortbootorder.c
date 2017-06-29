@@ -56,6 +56,9 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 static int get_line_number(u8 line_start, u8 line_end, char key );
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
 static inline int init_flash(void);
+static inline int is_flash_locked(void);
+static inline int lock_flash(void);
+static inline int unlock_flash(void);
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines);
 static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value);
 
@@ -63,6 +66,7 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines
 static u8 ipxe_toggle;
 static u8 usb_toggle;
 static u8 sga_toggle;
+static u8 spi_wp_toggle;
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
@@ -140,6 +144,8 @@ int main(void) {
 	token += strlen("sgaen");
 	sga_toggle = token ? strtoul(token, NULL, 10) : 0;
 
+	spi_wp_toggle = is_flash_locked();
+
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
 	int_ids( bootlist, max_lines, bootlist_def_ln );
 
@@ -165,6 +171,15 @@ int main(void) {
 			case 'l':
 			case 'L':
 				sga_toggle ^= 0x1;
+				break;
+			case 'w':
+			case 'W':
+				if (spi_wp_toggle) {
+					unlock_flash();
+				} else {
+					lock_flash();
+				}
+				spi_wp_toggle = is_flash_locked();
 				break;
 			case 's':
 			case 'S':
@@ -262,6 +277,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  l Serial console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
+	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
@@ -358,6 +374,24 @@ static inline int init_flash(void)
 }
 
 /*******************************************************************************/
+static inline int is_flash_locked(void)
+{
+	return spi_flash_is_locked(flash_device);
+}
+
+/*******************************************************************************/
+static inline int lock_flash(void)
+{
+	return spi_flash_lock(flash_device);
+}
+
+/*******************************************************************************/
+static inline int unlock_flash(void)
+{
+	return spi_flash_unlock(flash_device);
+}
+
+/*******************************************************************************/
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 	int i = 0;
 	int k = 0;
@@ -377,19 +411,24 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 	}
 	cbfs_formatted_list[i++] = NUL;
 
-
-
-
-
-		printf("Erasing Flash size 0x%x @ 0x%x\n", FLASH_SIZE_CHUNK, flash_address);
-	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
-		if (ret) {
-			printf("Erase failed, ret: %d\n", ret);
+	// try to unlock the flash if it is locked
+	if (spi_flash_is_locked(flash_device)) {
+		spi_flash_unlock(flash_device);
+		if (spi_flash_is_locked(flash_device)) {
+			printf("Flash is write protected. Exiting...\n");
+			return;
 		}
+	}
 
-		printf("Writing %d bytes @ 0x%x\n", i, flash_address);
+	printf("Erasing Flash size 0x%x @ 0x%x\n", FLASH_SIZE_CHUNK, flash_address);
+	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
+	if (ret) {
+		printf("Erase failed, ret: %d\n", ret);
+	}
+
+	printf("Writing %d bytes @ 0x%x\n", i, flash_address);
 	// write first 512 bytes
-		for (nvram_pos = 0; nvram_pos < (i & 0x1FC); nvram_pos += 4) {
+	for (nvram_pos = 0; nvram_pos < (i & 0x1FC); nvram_pos += 4) {
 		ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
 		if (ret) {
 			printf("Write failed, ret: %d\n", ret);
@@ -399,8 +438,14 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 	ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(i % 4), (u32 *)(cbfs_formatted_list + nvram_pos));
 	if (ret) {
 		printf("Write failed, ret: %d\n", ret);
-		}
+	}
 
+	if (spi_wp_toggle) {
+		printf("Enabling flash write protect...\n");
+		spi_flash_lock(flash_device);
+	}
+
+	spi_wp_toggle = spi_flash_is_locked(flash_device);
 
 	printf("Done\n");
 }

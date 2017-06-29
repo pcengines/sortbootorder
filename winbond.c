@@ -17,8 +17,12 @@
 /* M25Pxx-specific commands */
 #define CMD_W25_WREN       0x06	/* Write Enable */
 #define CMD_W25_WRDI       0x04	/* Write Disable */
-#define CMD_W25_RDSR       0x05	/* Read Status Register */
-#define CMD_W25_WRSR       0x01	/* Write Status Register */
+#define CMD_W25_RDSR1      0x05	/* Read 1st Status Register */
+#define CMD_W25_WRSR1      0x01	/* Write 1st Status Register */
+#define CMD_W25_RDSR2      0x35	/* Read 2nd Status Register */
+#define CMD_W25_WRSR2      0x31	/* Write 2nd Status Register */
+#define CMD_W25_RDSR3      0x15	/* Read 3rd Status Register */
+#define CMD_W25_WRSR3      0x11	/* Write 3rd Status Register */
 #define CMD_W25_READ       0x03	/* Read Data Bytes */
 #define CMD_W25_FAST_READ  0x0b	/* Read Data Bytes at Higher Speed */
 #define CMD_W25_PP         0x02	/* Page Program */
@@ -27,6 +31,16 @@
 #define CMD_W25_CE         0xc7	/* Chip Erase */
 #define CMD_W25_DP         0xb9	/* Deep Power-down */
 #define CMD_W25_RES        0xab	/* Release from DP, and Read Signature */
+
+#define REG_W25_BP0        (1 << 2)
+#define REG_W25_BP1        (1 << 3)
+#define REG_W25_BP2        (1 << 4)
+#define REG_W25_TB         (1 << 5)
+#define REG_W25_SEC        (1 << 6)
+#define REG_W25_SRP0       (1 << 7)
+#define REG_W25_SRP1       (1 << 0)
+#define REG_W25_CMP        (1 << 6)
+#define REG_W25_WPS        (1 << 2)
 
 struct winbond_spi_flash_params {
 	uint16_t	id;
@@ -177,6 +191,100 @@ static int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
 	return spi_flash_cmd_erase(flash, CMD_W25_SE, offset, len);
 }
 
+static int winbond_set_lock_flags(struct spi_flash *flash, int lock)
+{
+	int ret;
+	u8 cmd;
+	u8 s1, s2, s3;
+
+	flash->spi->rw = SPI_WRITE_FLAG;
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		spi_debug("SF: Unable to claim SPI bus\n");
+		return ret;
+	}
+
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR1, &s1, 1);
+	if (ret) {
+		goto out;
+	}
+
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &s2, 1);
+	if (ret) {
+		goto out;
+	}
+
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR3, &s3, 1);
+	if (ret) {
+		goto out;
+	}
+
+	if (lock) {
+		s1 |= REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0;
+	} else {
+		s1 &= ~(REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0);
+	}
+
+	s1 &= ~(REG_W25_SEC | REG_W25_TB);
+	s2 &= ~(REG_W25_SRP1 | REG_W25_CMP);
+	s3 &= ~(REG_W25_WPS);
+
+	ret = spi_flash_cmd(flash->spi, CMD_W25_WREN, NULL, 0);
+	if (ret < 0) {
+		spi_debug("SF: Enabling Write failed\n");
+		goto out;
+	}
+
+	cmd = CMD_W25_WRSR2;
+	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd), &s2, sizeof(s2));
+	if (ret < 0) {
+		spi_debug("SF: Status register write failed\n");
+		goto out;
+	}
+
+	cmd = CMD_W25_WRSR3;
+	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd), &s3, sizeof(s3));
+	if (ret < 0) {
+		spi_debug("SF: Status register write failed\n");
+		goto out;
+	}
+
+	cmd = CMD_W25_WRSR1;
+	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd), &s1, sizeof(s1));
+	if (ret < 0) {
+		spi_debug("SF: Status register write failed\n");
+		goto out;
+	}
+
+out:
+	spi_release_bus(flash->spi);
+	return ret;
+}
+
+static int winbond_unlock(struct spi_flash *flash)
+{
+	return winbond_set_lock_flags(flash, 0);
+}
+
+static int winbond_lock(struct spi_flash *flash)
+{
+	return winbond_set_lock_flags(flash, 1);
+}
+
+static int winbond_is_locked(struct spi_flash *flash)
+{
+	u8 status = 0;
+
+	spi_flash_cmd(flash->spi, CMD_W25_RDSR1, &status, 1);
+
+	if ((status & (REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0))
+	           == (REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0)) {
+		return 1;
+	}
+
+	return 0;
+}
+
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 {
 	const struct winbond_spi_flash_params *params;
@@ -211,6 +319,9 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 
 	stm->flash.write = winbond_write;
 	stm->flash.spi_erase = winbond_erase;
+	stm->flash.lock = winbond_lock;
+	stm->flash.unlock = winbond_unlock;
+	stm->flash.is_locked = winbond_is_locked;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
 	stm->flash.read = spi_flash_cmd_read_slow;
 #else

@@ -61,6 +61,9 @@ struct spi_flash {
 	int		(*write)(struct spi_flash *flash, u32 offset, size_t len,
 			const void *buf);
 	int		(*spi_erase)(struct spi_flash *flash, u32 offset, size_t len);
+	int		(*lock)(struct spi_flash *flash);
+	int		(*unlock)(struct spi_flash *flash);
+	int		(*is_locked)(struct spi_flash *flash);
 };
 
 struct spi_slave {
