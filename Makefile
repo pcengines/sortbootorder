@@ -26,30 +26,31 @@
 ## OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ## SUCH DAMAGE.
 ##
+COREBOOT_REL ?= mainline
+COREBOOT_ROOT ?= ../../../..
 
-$(if $(wildcard .xcompile),,$(eval $(shell ../../../../util/xcompile/xcompile $(XGCCPATH) > .xcompile || rm -f .xcompile)))
-.xcompile: ../../../../util/xcompile/xcompile
-
-CONFIG_COMPILER_GCC := y
-ARCH-y     := x86_32
-
-include .xcompile
+include $(COREBOOT_ROOT)/.xcompile
 
 src := $(CURDIR)
 srctree := $(src)
-sortbootorder_obj := $(src)/build
+build_dir := $(src)/build
 
-LIBCONFIG_PATH := $(realpath ../../../libpayload)
-LIBPAYLOAD_DIR := $(sortbootorder_obj)/libpayload
+LIBCONFIG_PATH := $(realpath $(COREBOOT_ROOT)/payloads/libpayload)
+LIBPAYLOAD_DIR := $(build_dir)/libpayload
 HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_DIR)/lib/libpayload.a)
 LIB_CONFIG ?= configs/defconfig-tinycurses
 
-# CFLAGS := -Wall -Werror -Os
-CFLAGS := -Wall -g -Os -fno-builtin
+CFLAGS := -Wall -Werror -Os -fno-builtin
+ifeq ($(COREBOOT_REL),legacy)
+	CFLAGS += -DCOREBOOT_LEGACY
+endif
+
 TARGET := sortbootorder
 OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
 
-ARCH-y     := x86_32
+ARCH-$(CONFIG_LP_ARCH_ARMV)    := arm
+ARCH-$(CONFIG_LP_ARCH_POWERPC) := powerpc
+ARCH-$(CONFIG_LP_ARCH_X86)     := x86_32
 
 CC := $(CC_$(ARCH-y))
 AS := $(AS_$(ARCH-y))
@@ -60,17 +61,14 @@ LPAS := AS="$(AS)" $(LIBPAYLOAD_DIR)/bin/lpas
 
 # Make is silent per default, but 'make V=1' will show all compiler calls.
 ifneq ($(V),1)
-Q := @
+	Q := @
 endif
 
 all: Makefile $(TARGET).elf
 
 $(TARGET).elf: $(OBJS) libpayload
 	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(LPCC) -o $@ $(OBJS)
-	$(Q)$(OBJCOPY) --only-keep-debug $@ sortbootorder.debug
-	$(Q)$(OBJCOPY) --strip-debug $@
-	$(Q)$(OBJCOPY) --add-gnu-debuglink=sortbootorder.debug $@
+	$(Q)$(LPCC) $(CFLAGS) -o $@ $(OBJS)
 
 %.o: %.c libpayload
 	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
@@ -88,15 +86,14 @@ libpayload:
 	$(Q)printf "Building libpayload @ $(LIBCONFIG_PATH).\n"
 	$(Q)make -C $(LIBCONFIG_PATH) distclean
 	$(Q)make -C $(LIBCONFIG_PATH) defconfig KBUILD_DEFCONFIG=$(LIB_CONFIG)
-	$(Q)make -C $(LIBCONFIG_PATH) DESTDIR=$(sortbootorder_obj) install
+	$(Q)make -C $(LIBCONFIG_PATH) DESTDIR=$(build_dir) install
 endif
 
 clean:
 	$(Q)rm -f $(TARGET).elf $(TARGET).debug *.o
-	$(Q)rm .xcompile
 
 distclean: clean
-	$(Q)rm -rf $(sortbootorder_obj)
+	$(Q)rm -rf $(build_dir)
 
 
 .PHONY: all clean distclean do-it-all depend with-depends without-depends debian postinst

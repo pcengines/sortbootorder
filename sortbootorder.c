@@ -67,6 +67,14 @@ static u8 ipxe_toggle;
 static u8 usb_toggle;
 static u8 sga_toggle;
 static u8 spi_wp_toggle;
+
+#ifdef COREBOOT_LEGACY
+static u8 console_toggle;
+static u8 ehci0_toggle;
+static u8 uartc_toggle;
+static u8 uartd_toggle;
+#endif
+
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
@@ -80,13 +88,7 @@ static u8 device_toggle[MAX_DEVICES];
  *     1) Display a list of boot devices
  *     2) Chosen device will be moved to the top and reset shuffled down
  *     3) Display the new boot order
- *     4) Give the option to:
- *        - Restore order defaults,
- *        - Serial console disable / enable
- *        - Network / IPXE disable / enable
- *        - USB boot disable / enable
- *        - SgaBios disable / enable
- *        - Exit with or without saving order
+ *     4) Enable/disable the chosen option
  */
 
 int main(void) {
@@ -99,7 +101,9 @@ int main(void) {
 	u8 line_start = 0;
 	u8 line_number = 0;
 	char *token;
+#ifndef COREBOOT_LEGACY
 	struct cbfs_handle *bootorder_handle;
+#endif
 
 	// Set to enabled because enable toggle is not (yet) implemented for these devices
 	device_toggle[SDCARD] = 1;
@@ -121,10 +125,17 @@ int main(void) {
 	}
 
 	// Find out where the bootorder file is in rom
+#ifndef COREBOOT_LEGACY
 	bootorder_handle = cbfs_get_handle( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE );
 	flash_address = bootorder_handle->media_offset + bootorder_handle->content_offset;
 	if ((u32)flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
+#else
+	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
+	flash_address = (int)tmp;
+	if ((u32)tmp & 0xfff)
+		printf("Warning: The bootorder file is not 4k aligned!\n");
+#endif
 
 	// Get required files from CBFS
 	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
@@ -143,6 +154,24 @@ int main(void) {
 	token = cbfs_find_string("sgaen", BOOTORDER_FILE);
 	token += strlen("sgaen");
 	sga_toggle = token ? strtoul(token, NULL, 10) : 0;
+
+#ifdef COREBOOT_LEGACY
+	token = cbfs_find_string("scon", BOOTORDER_FILE);
+	token += strlen("scon");
+	console_toggle = token ? strtoul(token, NULL, 10) : 1;
+
+	token = cbfs_find_string("ehcien", BOOTORDER_FILE);
+	token += strlen("ehcien");
+	ehci0_toggle = token ? strtoul(token, NULL, 10) : 1;
+
+	token = cbfs_find_string("uartc", BOOTORDER_FILE);
+	token += strlen("uartc");
+	uartc_toggle = token ? strtoul(token, NULL, 10) : 0;
+
+	token = cbfs_find_string("uartd", BOOTORDER_FILE);
+	token += strlen("uartd");
+	uartd_toggle = token ? strtoul(token, NULL, 10) : 0;
+#endif
 
 	spi_wp_toggle = is_flash_locked();
 
@@ -181,11 +210,35 @@ int main(void) {
 				}
 				spi_wp_toggle = is_flash_locked();
 				break;
+#ifdef COREBOOT_LEGACY
+			case 't':
+			case 'T':
+				console_toggle ^= 0x1;
+				break;
+			case 'o':
+			case 'O':
+				uartc_toggle ^= 0x1;
+				break;
+			case 'p':
+			case 'P':
+				uartd_toggle ^= 0x1;
+				break;
+			case 'h':
+			case 'H':
+				ehci0_toggle ^= 0x1;
+				break;
+#endif
 			case 's':
 			case 'S':
 				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "sgaen", sga_toggle + '0');
+#ifdef COREBOOT_LEGACY
+				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
+#endif
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
 			case 'x':
@@ -275,8 +328,14 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("\n\n");
 	printf("  r Restore boot order defaults\n");
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
-	printf("  l Serial console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
+	printf("  l Legacy console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
+#ifdef COREBOOT_LEGACY
+	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
+	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
+	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
+	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
+#endif
 	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
@@ -428,7 +487,7 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 
 	printf("Writing %d bytes @ 0x%x\n", i, flash_address);
 	// write first 512 bytes
-	for (nvram_pos = 0; nvram_pos < (i & 0x1FC); nvram_pos += 4) {
+	for (nvram_pos = 0; nvram_pos < (i & 0xFFFC); nvram_pos += 4) {
 		ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
 		if (ret) {
 			printf("Write failed, ret: %d\n", ret);
