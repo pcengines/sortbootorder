@@ -46,6 +46,8 @@
 #define MPCIE1_SATA2       8
 #define IPXE               9
 
+#define RESET() outb(0x06, 0x0cf9)
+
 /*** prototypes ***/
 static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
 static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 max_lines );
@@ -167,7 +169,7 @@ int main(void) {
 			case 'x':
 			case 'X':
 				printf("\nExiting ...");
-				outb(0x06, 0x0cf9); /* reset */
+				RESET();
 				break;
 			default:
 				if (key >= 'a' && key <= 'j' ) {
