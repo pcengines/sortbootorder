@@ -10,7 +10,7 @@ Releases 4.5.x are based on mainline support submitted in
 
 ## [v4.5.6] - 2017-06-29
 ### Added
-- Add option to enable/disable BIOS WP jumper opertaion
+- Add option to enable/disable BIOS WP jumper operation
 
 ### Changed
 - Use the same version for legacy and mainline builds
