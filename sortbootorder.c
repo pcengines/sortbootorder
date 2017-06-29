@@ -19,7 +19,7 @@
 #include <libpayload.h>
 #include <cbfs.h>
 #include <curses.h>
-#include "spi.h"
+#include "spi_flash.h"
 #include "version.h"
 
 /*** defines ***/
@@ -55,6 +55,7 @@ static void copy_list_line( char *src, char *dest );
 static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][MAX_LENGTH], u8 *line_count);
 static int get_line_number(u8 line_start, u8 line_end, char key );
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
+static inline int init_flash(void);
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines);
 static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value);
 
@@ -65,6 +66,7 @@ static u8 sga_toggle;
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
+static struct spi_flash *flash_device;
 static int flash_address;
 static u8 device_toggle[MAX_DEVICES];
 
@@ -108,6 +110,11 @@ int main(void) {
 #endif
 
 	printf("\n### PC Engines apu2 setup %s ###\n", SORTBOOTORDER_VER);
+
+	if (init_flash()) {
+		printf("Can't initialize flash device!\n");
+		RESET();
+	}
 
 	// Find out where the bootorder file is in rom
 	bootorder_handle = cbfs_get_handle( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE );
@@ -340,12 +347,22 @@ static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 ma
 }
 
 /*******************************************************************************/
+static inline int init_flash(void)
+{
+	flash_device = spi_flash_probe(0, 0, 0, 0);
+
+	if (!flash_device)
+		return -1;
+
+	return 0;
+}
+
+/*******************************************************************************/
 static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 	int i = 0;
 	int k = 0;
 	int j, ret;
 	char cbfs_formatted_list[MAX_DEVICES * MAX_LENGTH];
-	struct spi_flash *flash;
 	u32 nvram_pos;
 
 	// compact the table into the expected packed list
@@ -358,28 +375,34 @@ static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
 			k++;
 		}
 	}
-
 	cbfs_formatted_list[i++] = NUL;
-	spi_init();
-	flash = spi_flash_probe(0, 0, 0, 0);
 
-	if (!flash)
-		printf("Could not find SPI device\n");
-	else {
+
+
+
+
 		printf("Erasing Flash size 0x%x @ 0x%x\n", FLASH_SIZE_CHUNK, flash_address);
-		ret = flash->spi_erase(flash, flash_address, FLASH_SIZE_CHUNK);
+	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
 		if (ret) {
 			printf("Erase failed, ret: %d\n", ret);
 		}
-		flash->spi->rw = SPI_WRITE_FLAG;
+
 		printf("Writing %d bytes @ 0x%x\n", i, flash_address);
-		/* write first 512 bytes */
+	// write first 512 bytes
 		for (nvram_pos = 0; nvram_pos < (i & 0x1FC); nvram_pos += 4) {
-			flash->write(flash, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
+		ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
+		if (ret) {
+			printf("Write failed, ret: %d\n", ret);
 		}
-		/* write remaining filler characters in one run */
-		flash->write(flash, nvram_pos + flash_address, sizeof(i % 4), (u32 *)(cbfs_formatted_list + nvram_pos));
 	}
+	// write remaining filler characters in one run
+	ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(i % 4), (u32 *)(cbfs_formatted_list + nvram_pos));
+	if (ret) {
+		printf("Write failed, ret: %d\n", ret);
+		}
+
+
+	printf("Done\n");
 }
 
 /*******************************************************************************/

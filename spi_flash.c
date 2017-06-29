@@ -237,6 +237,8 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 	int ret, i, shift;
 	u8 idcode[IDCODE_LEN], *idp;
 
+	spi_init();
+
 	spi = spi_setup_slave(bus, cs, max_hz, spi_mode);
 	if (!spi) {
 		spi_debug("SF: Failed to set up slave\n");

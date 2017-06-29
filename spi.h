@@ -70,7 +70,6 @@ struct spi_slave {
 };
 
 void spi_init(void);
-struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,unsigned int max_hz, unsigned int spi_mode);
 
 /*-----------------------------------------------------------------------
  * Set up communications parameters for a SPI slave.

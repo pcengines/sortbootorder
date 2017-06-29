@@ -46,6 +46,9 @@
 #define CONTROLLER_PAGE_LIMIT	((int)(~0U>>1))
 #endif
 
+struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
+		unsigned int max_hz, unsigned int spi_mode);
+
 static inline int spi_flash_read(struct spi_flash *flash, u32 offset, size_t len, void *buf)
 {
 	return flash->read(flash, offset, len, buf);
