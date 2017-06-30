@@ -11,6 +11,7 @@ saves boot order in flash.
 - [Contents](#contents)
 - [Theory of operation](#theory-of-operation)
     - [Example menu view](#example-menu-view)
+    - [Settings description](#settings-description)
     - [bootorder file](#bootorder-file)
     - [bootorder_map file](#bootorder_map-file)
     - [Default settings](#default-settings)
@@ -75,6 +76,26 @@ First part of the list is used to set boot device priorities.  Second part of
 the list is used to enable/disable specific settings. Those information are
 stored in `bootorder` file, which is written back to flash after hitting `s`
 key.
+
+### Settings description
+
+* `r Restore boot order defaults` - restores boot order to default settings
+* `n Network/PXE boot` - enables/disables the network boot (iPXE)
+* `u USB boot` - enables/disables boot from USB drives
+* `l Legacy console redirection` - enables/disables serial redirection to the
+    sgabios (serial text console emulation).
+* `t Serial console` - enables/disables output to the serial console
+  Useful for legacy software, which is not using native serial port output, but
+    uses standard PC text console instead (eg. FreeDOS).
+* `o UART C` - enables/disables UART C on GPIO header. Disabled UART means
+     enabled GPIO.
+* `p UART D` - enables/disables UART D on GPIO header. Disabled UART means
+     enabled GPIO.
+* `h EHCI0 controller` - enables/disables EHCI0 controller (used in apu3)
+* `w Enable BIOS write protect` - enables/disables BIOS WP functionality. For
+    details, see descritption in [BIOS WP option](#bios-wp-option).
+* `x Exit setup without save` - exits setup menu without saving the settings
+* `s Save configuration and exit` - exits setup menu saving the settings
 
 ### bootorder file
 
