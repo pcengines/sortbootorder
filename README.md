@@ -147,8 +147,11 @@ enable`.
 ### BIOS WP option
 
 `Enable BIOS write protect` option (`w`) enables or disables flash write
-protection feature. When enabled, then BIOS WP jumper (1-2 pins of J2) controls the possibility of writing to flash. When BIOS WP is shorted and option is
-enabled no writes to flash is possible, including disabling the write protect option itself and updating the BIOS is also not possible (using e.g. `flashrom` tool).
+protection feature. When enabled, then BIOS WP jumper (1-2 pins of J2) controls
+the possibility of writing to flash. When BIOS WP is shorted and option is
+enabled no writes to flash is possible, including disabling the write protect
+option itself and updating the BIOS is also not possible (using e.g. `flashrom`
+tool).
 
 ## Building
 
