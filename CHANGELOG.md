@@ -3,10 +3,14 @@ Change log for PC Engines sortbootorder
 
 Releases 4.0.x are based on PC Engines 20160304 release.
 
-Releases 4.5.x are based on mainline support submitted in
+Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+
+## [v4.5.7] - 2017-07-21
+### Added
+- Add option to force CLK for mPCIe2 slot (GPP3 PCIe CLK)
 
 ## [v4.5.6] - 2017-06-29
 ### Added
@@ -102,7 +106,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.5.6...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.5.7...master
+[v4.5.6]: https://github.com/pcengines/sortbootorder/compare/v4.5.6...v4.5.7
 [v4.5.6]: https://github.com/pcengines/sortbootorder/compare/v4.5.5...v4.5.6
 [v4.5.5]: https://github.com/pcengines/sortbootorder/compare/v4.5.4...v4.5.5
 [v4.5.4]: https://github.com/pcengines/sortbootorder/compare/v4.5.3...v4.5.4
