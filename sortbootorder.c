@@ -73,6 +73,7 @@ static u8 console_toggle;
 static u8 ehci0_toggle;
 static u8 uartc_toggle;
 static u8 uartd_toggle;
+static u8 mpcie2_clk_toggle;
 #endif
 
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
@@ -171,6 +172,10 @@ int main(void) {
 	token = cbfs_find_string("uartd", BOOTORDER_FILE);
 	token += strlen("uartd");
 	uartd_toggle = token ? strtoul(token, NULL, 10) : 0;
+
+	token = cbfs_find_string("mpcie2_clk", BOOTORDER_FILE);
+	token += strlen("mpcie2_clk");
+	mpcie2_clk_toggle = token ? strtoul(token, NULL, 10) : 0;
 #endif
 
 	spi_wp_toggle = is_flash_locked();
@@ -223,6 +228,10 @@ int main(void) {
 			case 'P':
 				uartd_toggle ^= 0x1;
 				break;
+			case 'm':
+			case 'M':
+				mpcie2_clk_toggle ^= 0x1;
+				break;
 			case 'h':
 			case 'H':
 				ehci0_toggle ^= 0x1;
@@ -237,6 +246,7 @@ int main(void) {
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "mpcie2_clk", mpcie2_clk_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
 #endif
 				save_flash( bootlist, max_lines );
@@ -334,6 +344,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
+	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n", (mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");

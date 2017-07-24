@@ -66,6 +66,7 @@ For coreboot legacy (4.0.x) version:
   t Serial console - Currently Enabled
   o UART C - Currently Enabled
   p UART D - Currently Enabled
+  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently Disabled
   h EHCI0 controller - Currently Disabled
   w Enable BIOS write protect - Currently Disabled
   x Exit setup without save
@@ -91,6 +92,12 @@ key.
      enabled GPIO.
 * `p UART D` - enables/disables UART D on GPIO header. Disabled UART means
      enabled GPIO.
+* `m Force mPCIe2 slot CLK (GPP3 PCIe)` - enabling this option forces GPP3 PCIe
+  clock (which is attached to mPCIe2 slot) to be always on. This helps in some
+  cases, one example could be
+  [mPCIe Ethernet extensioncard](https://github.com/pcengines/apu2-documentation/blob/master/docs/debug/mpcie_ethernet.md).
+  It is advised to set to `Disable` if no extension card is attached to mPCIe2
+  slot.
 * `h EHCI0 controller` - enables/disables EHCI0 controller (used in apu3)
 * `w Enable BIOS write protect` - enables/disables BIOS WP functionality. For
     details, see descritption in [BIOS WP option](#bios-wp-option).
