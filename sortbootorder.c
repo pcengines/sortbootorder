@@ -68,13 +68,13 @@ static u8 usb_toggle;
 static u8 sga_toggle;
 static u8 spi_wp_toggle;
 
-#ifdef COREBOOT_LEGACY
+
 static u8 console_toggle;
 static u8 ehci0_toggle;
 static u8 uartc_toggle;
 static u8 uartd_toggle;
 static u8 mpcie2_clk_toggle;
-#endif
+
 
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
@@ -138,6 +138,7 @@ int main(void) {
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 #endif
 
+
 	// Get required files from CBFS
 	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
@@ -156,7 +157,7 @@ int main(void) {
 	token += strlen("sgaen");
 	sga_toggle = token ? strtoul(token, NULL, 10) : 0;
 
-#ifdef COREBOOT_LEGACY
+
 	token = cbfs_find_string("scon", BOOTORDER_FILE);
 	token += strlen("scon");
 	console_toggle = token ? strtoul(token, NULL, 10) : 1;
@@ -176,7 +177,7 @@ int main(void) {
 	token = cbfs_find_string("mpcie2_clk", BOOTORDER_FILE);
 	token += strlen("mpcie2_clk");
 	mpcie2_clk_toggle = token ? strtoul(token, NULL, 10) : 0;
-#endif
+
 
 	spi_wp_toggle = is_flash_locked();
 
@@ -215,7 +216,6 @@ int main(void) {
 				}
 				spi_wp_toggle = is_flash_locked();
 				break;
-#ifdef COREBOOT_LEGACY
 			case 't':
 			case 'T':
 				console_toggle ^= 0x1;
@@ -236,19 +236,16 @@ int main(void) {
 			case 'H':
 				ehci0_toggle ^= 0x1;
 				break;
-#endif
 			case 's':
 			case 'S':
 				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "sgaen", sga_toggle + '0');
-#ifdef COREBOOT_LEGACY
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "mpcie2_clk", mpcie2_clk_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
-#endif
 				save_flash( bootlist, max_lines );
 				// fall through to exit ...
 			case 'x':
@@ -340,13 +337,11 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
 	printf("  l Legacy console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
-#ifdef COREBOOT_LEGACY
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
 	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n", (mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
-#endif
 	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
