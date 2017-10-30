@@ -8,6 +8,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.6.3] - 2017-10-30
+### Added
+- Enable runtime configuration of UARTc/d, EHCI and mPCIe2 CLK in mainline
+
 ## [v4.5.7] - 2017-07-21
 ### Added
 - Add option to force CLK for mPCIe2 slot (GPP3 PCIe CLK)
@@ -106,8 +110,9 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.5.7...master
-[v4.5.6]: https://github.com/pcengines/sortbootorder/compare/v4.5.6...v4.5.7
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.3...master
+[v4.6.3]: https://github.com/pcengines/sortbootorder/compare/v4.5.7...v4.6.3
+[v4.5.7]: https://github.com/pcengines/sortbootorder/compare/v4.5.6...v4.5.7
 [v4.5.6]: https://github.com/pcengines/sortbootorder/compare/v4.5.5...v4.5.6
 [v4.5.5]: https://github.com/pcengines/sortbootorder/compare/v4.5.4...v4.5.5
 [v4.5.4]: https://github.com/pcengines/sortbootorder/compare/v4.5.3...v4.5.4
