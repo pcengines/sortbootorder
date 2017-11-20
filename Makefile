@@ -74,6 +74,7 @@ LPAS := AS="$(AS)" $(LIBPAYLOAD_OBJ)/bin/lpas
 CFLAGS += -Wall -Werror -Os -fno-builtin $(CFLAGS_$(ARCH-y)) $(INCLUDES)
 ifeq ($(COREBOOT_REL),legacy)
 	CFLAGS += -DCOREBOOT_LEGACY
+endif
 
 real-all: $(TARGET)
 
