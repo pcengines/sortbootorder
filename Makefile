@@ -14,9 +14,11 @@
 ## GNU General Public License for more details.
 ##
 
-# Assuming src path payloads/external/sortbootorder/sortbootorder/ by default
+# compilation for coreboot mainline (4.5,4.6) or legacy (4.0)
+COREBOOT_REL ?= mainline
 
 src := $(CURDIR)
+# Assuming src path payloads/external/sortbootorder/sortbootorder/ by default
 KDIR ?= $(src)/../../../../
 srctree := $(src)
 build_dir := $(src)/build
@@ -70,6 +72,8 @@ LPCC := CC="$(CC)" $(LIBPAYLOAD_OBJ)/bin/lpgcc
 LPAS := AS="$(AS)" $(LIBPAYLOAD_OBJ)/bin/lpas
 
 CFLAGS += -Wall -Werror -Os -fno-builtin $(CFLAGS_$(ARCH-y)) $(INCLUDES)
+ifeq ($(COREBOOT_REL),legacy)
+	CFLAGS += -DCOREBOOT_LEGACY
 
 real-all: $(TARGET)
 
