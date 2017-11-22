@@ -1,6 +1,10 @@
 *.o
 *.elf
+*.elf.debug
 build
+lpbuild
+lp.config*
+.xcompile
 
 cscope.*
 tags
