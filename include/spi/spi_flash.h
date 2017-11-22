@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "spi.h"
+#include <spi/spi.h>
 
 /**
  * container_of - cast a member of a structure out to the containing structure

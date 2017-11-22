@@ -10,9 +10,9 @@
 #define SPI_DEBUG
 
 #include <stdlib.h>
-#include "spi_flash.h"
+#include <spi/spi_flash.h>
+#include <spi/spi.h>
 #include "spi_flash_internal.h"
-#include "spi.h"
 
 /* M25Pxx-specific commands */
 #define CMD_W25_WREN       0x06	/* Write Enable */
