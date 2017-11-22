@@ -46,6 +46,24 @@
 #define CONTROLLER_PAGE_LIMIT	((int)(~0U>>1))
 #endif
 
+struct spi_flash {
+	struct spi_slave *spi;
+	const char	*name;
+	u32		size;
+	u32		sector_size;
+	int		(*read)(struct spi_flash *flash, u32 offset, size_t len, void *buf);
+	int		(*write)(struct spi_flash *flash, u32 offset, size_t len,
+			const void *buf);
+	int		(*spi_erase)(struct spi_flash *flash, u32 offset, size_t len);
+	int		(*lock)(struct spi_flash *flash);
+	int		(*unlock)(struct spi_flash *flash);
+	int		(*is_locked)(struct spi_flash *flash);
+	int		(*sec_sts)(struct spi_flash *flash);
+	int		(*sec_read)(struct spi_flash *flash, u32 offset, size_t len, void *buf);
+	int		(*sec_prog)(struct spi_flash *flash, u32 offset, size_t len,
+			const void *buf);
+};
+
 struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 		unsigned int max_hz, unsigned int spi_mode);
 
@@ -79,6 +97,23 @@ static inline int spi_flash_unlock(struct spi_flash *flash)
 static inline int spi_flash_is_locked(struct spi_flash *flash)
 {
 	return flash->is_locked(flash);
+}
+
+static inline int spi_flash_sec_sts(struct spi_flash *flash)
+{
+	return flash->sec_sts(flash);
+}
+
+static inline int spi_flash_sec_read(struct spi_flash *flash, u32 offset, size_t len,
+		void *buf)
+{
+	return flash->sec_read(flash, offset, len, buf);
+}
+
+static inline int spi_flash_sec_prog(struct spi_flash *flash, u32 offset, size_t len,
+		const void *buf)
+{
+	return flash->sec_prog(flash, offset, len, buf);
 }
 
 #endif /* _SPI_FLASH_H_ */
