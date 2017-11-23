@@ -445,14 +445,14 @@ static int winbond_sec_lock(struct spi_flash *flash, u8 reg)
 	cmd = CMD_W25_WRSR2;
 	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd),
 		 &status, sizeof(status));
-	if (ret < 0) {
+	if (ret) {
 		spi_debug("SF: Status register write failed\n");
 		goto out;
 	}
 
 out:
 	spi_release_bus(flash->spi);
-	return status;
+	return ret;
 }
 
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
