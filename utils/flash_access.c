@@ -59,6 +59,11 @@ inline int prog_sec(u8 reg, u8 addr, const void *buf, size_t len)
 	return spi_flash_sec_prog(flash_device, offset, len, buf);
 }
 
+inline int lock_sec(u8 reg)
+{
+	return spi_flash_sec_lock(flash_device, reg);
+}
+
 /*******************************************************************************/
 void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, u8 spi_wp_toggle) {
 	int i = 0;

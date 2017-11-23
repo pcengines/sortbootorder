@@ -389,11 +389,69 @@ out:
 static int winbond_sec_sts(struct spi_flash *flash)
 {
 	u8 status = 0;
+	int ret;
 
-	spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &status, 1);
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &status, 1);
+	if (ret) {
+		return -1;
+	}
 
 	status = status & (REG_W25_LB1 | REG_W25_LB2 | REG_W25_LB3) >> 3;
 
+	return status;
+}
+
+static int winbond_sec_lock(struct spi_flash *flash, u8 reg)
+{
+	int ret;
+	u8 status = 0;
+	u8 cmd;
+
+	flash->spi->rw = SPI_WRITE_FLAG;
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		spi_debug("SF: Unable to claim SPI bus\n");
+		return ret;
+	}
+
+	cmd = CMD_W25_RDSR2;
+	ret = spi_flash_cmd(flash->spi, cmd, &status, sizeof(status));
+	if (ret) {
+		spi_debug("SF: problem reading the status register\n");
+		goto out;
+	}
+
+	switch (reg) {
+	case 1:
+		status |= REG_W25_LB1;
+		break;
+	case 2:
+		status |= REG_W25_LB2;
+		break;
+	case 3:
+		status |= REG_W25_LB3;
+		break;
+	default:
+		spi_debug("SF: can't lock sec register, wrong index given\n");
+		goto out;
+	}
+
+	ret = spi_flash_cmd(flash->spi, CMD_W25_WREN, NULL, 0);
+	if (ret) {
+		spi_debug("SF: Enabling Write failed\n");
+		goto out;
+	}
+
+	cmd = CMD_W25_WRSR2;
+	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd),
+		 &status, sizeof(status));
+	if (ret < 0) {
+		spi_debug("SF: Status register write failed\n");
+		goto out;
+	}
+
+out:
+	spi_release_bus(flash->spi);
 	return status;
 }
 
@@ -437,6 +495,7 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 	stm->flash.sec_sts = winbond_sec_sts;
 	stm->flash.sec_read = winbond_sec_read;
 	stm->flash.sec_prog = winbond_sec_program;
+	stm->flash.sec_lock = winbond_sec_lock;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
 	stm->flash.read = spi_flash_cmd_read_slow;
 #else
