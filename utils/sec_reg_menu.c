@@ -110,10 +110,9 @@ void handle_reg_sec_menu(void) {
 		case 's':
 			cmd_read_sec_sts();
 			break;
-/*		case 'l':
+		case 'l':
 			cmd_lock_sec(command);
 			break;
-*/
 		case 'q':
 			end = TRUE;
 			break;

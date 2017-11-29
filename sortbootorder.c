@@ -224,7 +224,6 @@ int main(void) {
 			case 'H':
 				ehci0_toggle ^= 0x1;
 				break;
-			case 'z':
 			case 'Z':
 				handle_reg_sec_menu();
 				break;
@@ -335,7 +334,6 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n", (mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
-	printf("  z Security registers access menu\n");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
