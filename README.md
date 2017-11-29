@@ -10,16 +10,18 @@ saves boot order in flash.
 
 - [Contents](#contents)
 - [Theory of operation](#theory-of-operation)
-    - [Example menu view](#example-menu-view)
-    - [Settings description](#settings-description)
-    - [bootorder file](#bootorder-file)
-    - [bootorder_map file](#bootorder_map-file)
-    - [Default settings](#default-settings)
-    - [BIOS WP option](#bios-wp-option)
+        - [Example menu view](#example-menu-view)
+        - [Settings description](#settings-description)
+        - [bootorder file](#bootorder-file)
+        - [bootorder_map file](#bootorder_map-file)
+        - [Default settings](#default-settings)
+        - [BIOS WP option](#bios-wp-option)
+        - [Hidden security registers menu](#hidden-security-registers-menu)
+                - [Example](#example)
 - [Building](#building)
-    - [Manual build](#manual-build)
-    - [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)
-    - [Recent automated building process](#recent-automated-building-process)
+        - [Manual build](#manual-build)
+        - [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)
+        - [Recent automated building process](#recent-automated-building-process)
 
 <!-- /TOC -->
 
@@ -29,28 +31,7 @@ saves boot order in flash.
 
 > Exact list may be different, depending on BIOS release version.
 
-For coreboot mainline (4.5.x) version:
-
-  ```
-  a USB 1 / USB 2 SS and HS
-  b SDCARD
-  c mSATA
-  d SATA
-  e mPCIe1 SATA1 and SATA2
-  f iPXE (disabled)
-
-  r Restore boot order defaults
-  n Network/PXE boot - Currently Disabled
-  u USB boot - Currently Enabled
-  l Legacy console redirection - Currently Disabled
-  w Enable BIOS write protect - Currently Disabled
-  x Exit setup without save
-  s Save configuration and exit
-  ```
-
-For coreboot legacy (4.0.x) version:
-
-  ```
+```
   a USB 1 / USB 2 SS and HS
   b SDCARD
   c mSATA
@@ -62,7 +43,6 @@ For coreboot legacy (4.0.x) version:
   r Restore boot order defaults
   n Network/PXE boot - Currently Disabled
   u USB boot - Currently Enabled
-  l Legacy console redirection - Currently Enabled
   t Serial console - Currently Enabled
   o UART C - Currently Enabled
   p UART D - Currently Enabled
@@ -71,9 +51,9 @@ For coreboot legacy (4.0.x) version:
   w Enable BIOS write protect - Currently Disabled
   x Exit setup without save
   s Save configuration and exit
-  ```
+```
 
-First part of the list is used to set boot device priorities.  Second part of
+First part of the list is used to set boot device priorities. Second part of
 the list is used to enable/disable specific settings. Those information are
 stored in `bootorder` file, which is written back to flash after hitting `s`
 key.
@@ -132,9 +112,9 @@ Relevant content of this file may look like this:
 Rest of this file is filled with characters to meet that 4096 bytes
 requirement.
 
-When device is attached and detected by `SeaBIOS`, then `SeaBIOS` begins to check
-if such device node is written into `bootorder` file. If it is, it gains priority
-according to it's place on the list.
+When device is attached and detected by `SeaBIOS`, then `SeaBIOS` begins to
+check if such device node is written into `bootorder` file. If it is, it gains
+priority according to it's place on the list.
 You can refer to
 [SeaBIOS](https://github.com/pcengines/seabios/blob/coreboot-4.0.x/docs/Runtime_config.md#configuring-boot-order)
 documentation for more insight.
@@ -181,21 +161,44 @@ enabled no writes to flash is possible, including disabling the write protect
 option itself and updating the BIOS is also not possible (using e.g. `flashrom`
 tool).
 
+### Hidden security registers menu
+
+Experimental menu containing options to write and read serial number to
+security registers of the SPI flash chip. To enter press `Z` (`z + shift`)
+in the main menu. Option description:
+
+* `r` - reads the stored serial number
+* `w {serial}` - writes the serial to register. Saves only first 10 characters.
+* `s` - gets lock status of the security registers
+* `l {register number}` - try to lock the specified register (1,2 or 3). Serial
+  is stored in the register 1
+* `q` - return to main menu
+
+#### Example
+
+```
+> w 1234567890
+serial written
+> r
+serial: 1234567890
+> q
+```
+
 ## Building
 
 ### Manual build
 
-> coreboot is in `./coreboot-${BR_NAME}` directory
+> coreboot is in `../coreboot-${BR_NAME}` directory
 
 ```sh
 git clone https://github.com/pcengines/sortbootorder.git sortbootorder
 cd sortbootorder
-# for mainline coreboot (4.5.x)
-COREBOOT_ROOT=../coreboot-${BR_NAME} make distclean
-COREBOOT_ROOT=../coreboot-${BR_NAME} make
+# for mainline coreboot (4.5.x, 4.6.x)
+KDIR=../coreboot-${BR_NAME} make distclean
+KDIR=../coreboot-${BR_NAME} make
 # for legacy coreboot (4.0.x)
-COREBOOT_ROOT=../coreboot-${BR_NAME} make distclean
-COREBOOT_ROOT=../coreboot-${BR_NAME} COREBOOT_REL=legacy make
+KDIR=../coreboot-${BR_NAME} make distclean
+KDIR=../coreboot-${BR_NAME} COREBOOT_REL=legacy make
 ```
 
 ### Adding sortbootorder to coreboot.rom file
