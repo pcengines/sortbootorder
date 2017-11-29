@@ -43,20 +43,12 @@ inline int read_sec_status(void)
 
 inline int read_sec(u8 reg, u8 addr, void *buf, size_t len)
 {
-	u32 offset = reg;
-	offset <<= 12;
-	offset |= addr;
-
-	return spi_flash_sec_read(flash_device, offset, len, buf);
+	return spi_flash_sec_read(flash_device, sec_addr(reg, addr), len, buf);
 }
 
 inline int prog_sec(u8 reg, u8 addr, const void *buf, size_t len)
 {
-	u32 offset = reg;
-	offset <<= 12;
-	offset |= addr;
-
-	return spi_flash_sec_prog(flash_device, offset, len, buf);
+	return spi_flash_sec_prog(flash_device, sec_addr(reg, addr), len, buf);
 }
 
 inline int lock_sec(u8 reg)

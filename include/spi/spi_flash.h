@@ -37,6 +37,7 @@
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 #define min(a, b) ((a)<(b)?(a):(b))
+#define sec_addr(offset, address) (((uint32_t)offset) << 12) | (address))
 
 #define CONFIG_ICH_SPI
 #ifdef CONFIG_ICH_SPI
