@@ -57,7 +57,8 @@ inline int lock_sec(u8 reg)
 }
 
 /*******************************************************************************/
-void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, u8 spi_wp_toggle) {
+void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
+	        u8 max_lines, u8 spi_wp_toggle) {
 	int i = 0;
 	int k = 0;
 	int j, ret;
@@ -66,12 +67,10 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_
 
 	// compact the table into the expected packed list
 	for (j = 0; j < max_lines; j++) {
-		k = 0;
-		while (1) {
+		for (k = 0; k < MAX_LENGTH; k++) {
 			cbfs_formatted_list[i++] = buffer[j][k];
 			if (buffer[j][k] == NEWLINE )
 				break;
-			k++;
 		}
 	}
 	cbfs_formatted_list[i++] = NUL;
@@ -85,24 +84,32 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_
 		}
 	}
 
-	printf("Erasing Flash size 0x%x @ 0x%x\n", FLASH_SIZE_CHUNK, flash_address);
+	printf("Erasing Flash size 0x%x @ 0x%x\n",
+	       FLASH_SIZE_CHUNK, flash_address);
 	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
 	if (ret) {
 		printf("Erase failed, ret: %d\n", ret);
+		return;
 	}
 
 	printf("Writing %d bytes @ 0x%x\n", i, flash_address);
 	// write first 512 bytes
 	for (nvram_pos = 0; nvram_pos < (i & 0xFFFC); nvram_pos += 4) {
-		ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
+		ret = spi_flash_write(flash_device, nvram_pos + flash_address,
+				      sizeof(u32),
+				      (u32 *)(cbfs_formatted_list + nvram_pos));
 		if (ret) {
 			printf("Write failed, ret: %d\n", ret);
+			return;
 		}
 	}
 	// write remaining filler characters in one run
-	ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(i % 4), (u32 *)(cbfs_formatted_list + nvram_pos));
+	ret = spi_flash_write(flash_device, nvram_pos + flash_address,
+			      sizeof(i % 4),
+			      (u32 *)(cbfs_formatted_list + nvram_pos));
 	if (ret) {
 		printf("Write failed, ret: %d\n", ret);
+		return;
 	}
 
 	if (spi_wp_toggle) {
