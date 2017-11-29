@@ -311,7 +311,7 @@ static int winbond_sec_read(struct spi_flash *flash, u32 offset, size_t len, voi
 	cmd[1] = 0x0;
 	cmd[2] = reg;
 	cmd[3] = addr;
-	cmd[4] = 0x0; // dummy
+	cmd[4] = 0x0; // dummy byte needed for this instruction
 
 	flash->spi->rw = SPI_READ_FLAG;
 	ret = spi_claim_bus(flash->spi);
@@ -396,7 +396,7 @@ static int winbond_sec_sts(struct spi_flash *flash)
 		return -1;
 	}
 
-	status = status & (REG_W25_LB1 | REG_W25_LB2 | REG_W25_LB3) >> 3;
+	status = status & ((REG_W25_LB1 | REG_W25_LB2 | REG_W25_LB3) >> 3);
 
 	return status;
 }
@@ -414,8 +414,7 @@ static int winbond_sec_lock(struct spi_flash *flash, u8 reg)
 		return ret;
 	}
 
-	cmd = CMD_W25_RDSR2;
-	ret = spi_flash_cmd(flash->spi, cmd, &status, sizeof(status));
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &status, sizeof(status));
 	if (ret) {
 		spi_debug("SF: problem reading the status register\n");
 		goto out;
