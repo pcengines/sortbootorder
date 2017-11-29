@@ -52,20 +52,6 @@
 #define SPI_READ_FLAG	0x01
 #define SPI_WRITE_FLAG	0x02
 
-struct spi_flash {
-	struct spi_slave *spi;
-	const char	*name;
-	u32		size;
-	u32		sector_size;
-	int		(*read)(struct spi_flash *flash, u32 offset, size_t len, void *buf);
-	int		(*write)(struct spi_flash *flash, u32 offset, size_t len,
-			const void *buf);
-	int		(*spi_erase)(struct spi_flash *flash, u32 offset, size_t len);
-	int		(*lock)(struct spi_flash *flash);
-	int		(*unlock)(struct spi_flash *flash);
-	int		(*is_locked)(struct spi_flash *flash);
-};
-
 struct spi_slave {
 	unsigned int	bus;
 	unsigned int	cs;

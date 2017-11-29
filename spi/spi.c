@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arch/io.h>
-#include "spi.h"
+#include <spi/spi.h>
 #include <pci.h>
 
 #if defined (CONFIG_SB800_IMC_FWM)

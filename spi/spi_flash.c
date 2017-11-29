@@ -13,9 +13,9 @@
 #include <libpayload-config.h>
 #include <stdlib.h>
 #include <string.h>
-#include "spi_flash.h"
+#include <spi/spi_flash.h>
+#include <spi/spi.h>
 #include "spi_flash_internal.h"
-#include "spi.h"
 
 static void spi_flash_addr(u32 addr, u8 *cmd)
 {

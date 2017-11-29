@@ -16,9 +16,9 @@
 //#define SPI_DEBUG
 
 #include <stdlib.h>
-#include "spi_flash.h"
+#include <spi/spi_flash.h>
+#include <spi/spi.h>
 #include "spi_flash_internal.h"
-#include "spi.h"
 
 #define CMD_SST_WREN        0x06	/* Write Enable */
 #define CMD_SST_WRDI        0x04	/* Write Disable */

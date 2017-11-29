@@ -14,9 +14,11 @@
 ## GNU General Public License for more details.
 ##
 
-# Assuming src path payloads/external/sortbootorder/sortbootorder/ by default
+# compilation for coreboot mainline (4.5,4.6) or legacy (4.0)
+COREBOOT_REL ?= mainline
 
 src := $(CURDIR)
+# Assuming src path payloads/external/sortbootorder/sortbootorder/ by default
 KDIR ?= $(src)/../../../../
 srctree := $(src)
 build_dir := $(src)/build
@@ -43,9 +45,14 @@ HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_OBJ)/lib/libpayload.a)
 LIBPAYLOAD_CONFIG ?= configs/defconfig-tinycurses
 OBJCOPY ?= objcopy
 
-INCLUDES = -I$(build_dir) -I$(KDIR)/src/commonlib/include
-OBJECTS = eon.o gigadevice.o macronix.o sortbootorder.o spansion.o spi_flash.o spi.o sst.o stmicro.o winbond.o
+INCLUDES = -I$(src)/include -I$(KDIR)/src/commonlib/include
+SRC_DIRS = spi utils
+SRC_FILES = $(wildcard *.c)
+SRC_FILES += $(wildcard spi/*.c)
+SRC_FILES += $(wildcard utils/*.c)
+OBJECTS = $(patsubst %.c,%.o,$(SRC_FILES))
 OBJS    = $(patsubst %,$(build_dir)/%,$(OBJECTS))
+DIRS    = $(patsubst %,$(build_dir)/%,$(SRC_DIRS))
 TARGET  = sortbootorder.elf
 
 all: real-all
@@ -70,23 +77,25 @@ LPCC := CC="$(CC)" $(LIBPAYLOAD_OBJ)/bin/lpgcc
 LPAS := AS="$(AS)" $(LIBPAYLOAD_OBJ)/bin/lpas
 
 CFLAGS += -Wall -Werror -Os -fno-builtin $(CFLAGS_$(ARCH-y)) $(INCLUDES)
+ifeq ($(COREBOOT_REL),legacy)
+	CFLAGS += -DCOREBOOT_LEGACY
+endif
 
 real-all: $(TARGET)
 
-$(TARGET): $(OBJS) libpayload
+$(TARGET): $(OBJS) libpayload $(DIRS)
 	printf "    LPCC       $(subst $(CURDIR)/,,$(@)) (LINK)\n"
 	$(LPCC) -o $@ $(OBJS)
 	$(OBJCOPY) --only-keep-debug $@ $(TARGET).debug
 	$(OBJCOPY) --strip-debug $@
 	$(OBJCOPY) --add-gnu-debuglink=$(TARGET).debug $@
 
-$(build_dir)/%.S.o: $(src)/%.S libpayload
-	printf "    LPAS       $(subst $(CURDIR)/,,$(@))\n"
-	$(LPAS) -o $@ $<
-
-$(build_dir)/%.o: $(src)/%.c libpayload
+$(build_dir)/%.o: $(src)/%.c libpayload $(DIRS)
 	printf "    LPCC       $(subst $(CURDIR)/,,$(@))\n"
 	$(LPCC) $(CFLAGS) -c -o $@ $<
+
+$(DIRS):
+	mkdir -p $(DIRS)
 
 defaultbuild:
 	$(MAKE) all

@@ -27,9 +27,9 @@
 //#define SPI_DEBUG
 
 #include <stdlib.h>
-#include "spi_flash.h"
+#include <spi/spi_flash.h>
+#include <spi/spi.h>
 #include "spi_flash_internal.h"
-#include "spi.h"
 
 /* S25FLxx-specific commands */
 #define CMD_S25FLXX_READ       0x03	/* Read Data Bytes */
