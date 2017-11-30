@@ -19,19 +19,14 @@
 #include <libpayload.h>
 #include <cbfs.h>
 #include <curses.h>
-#include "spi_flash.h"
+#include <flash_access.h>
+#include <sec_reg_menu.h>
 #include "version.h"
 
 /*** defines ***/
-#define CONFIG_SPI_FLASH_NO_FAST_READ
 #define BOOTORDER_FILE     "bootorder"
 #define BOOTORDER_DEF      "bootorder_def"
 #define BOOTORDER_MAP      "bootorder_map"
-#define MAX_DEVICES        64
-#define MAX_LENGTH         64
-#define NEWLINE            0x0A
-#define NUL                0x00
-#define FLASH_SIZE_CHUNK   0x1000 //4k
 
 // These names come from bootorder_map file
 // indexes depend on device order in this file
@@ -55,19 +50,14 @@ static void copy_list_line( char *src, char *dest );
 static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][MAX_LENGTH], u8 *line_count);
 static int get_line_number(u8 line_start, u8 line_end, char key );
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
-static inline int init_flash(void);
-static inline int is_flash_locked(void);
-static inline int lock_flash(void);
-static inline int unlock_flash(void);
-static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines);
 static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value);
 
 /*** local variables ***/
+static int flash_address;
+
 static u8 ipxe_toggle;
 static u8 usb_toggle;
-static u8 sga_toggle;
 static u8 spi_wp_toggle;
-
 
 static u8 console_toggle;
 static u8 ehci0_toggle;
@@ -75,12 +65,10 @@ static u8 uartc_toggle;
 static u8 uartd_toggle;
 static u8 mpcie2_clk_toggle;
 
-
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
-static struct spi_flash *flash_device;
-static int flash_address;
+
 static u8 device_toggle[MAX_DEVICES];
 
 /* sortbootorder payload:
@@ -138,7 +126,6 @@ int main(void) {
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 #endif
 
-
 	// Get required files from CBFS
 	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
@@ -152,11 +139,6 @@ int main(void) {
 	token = cbfs_find_string("usben", BOOTORDER_FILE);
 	token += strlen("usben");
 	usb_toggle = token ? strtoul(token, NULL, 10) : 1;
-
-	token = cbfs_find_string("sgaen", BOOTORDER_FILE);
-	token += strlen("sgaen");
-	sga_toggle = token ? strtoul(token, NULL, 10) : 0;
-
 
 	token = cbfs_find_string("scon", BOOTORDER_FILE);
 	token += strlen("scon");
@@ -203,10 +185,6 @@ int main(void) {
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
-			case 'l':
-			case 'L':
-				sga_toggle ^= 0x1;
-				break;
 			case 'w':
 			case 'W':
 				if (spi_wp_toggle) {
@@ -236,17 +214,19 @@ int main(void) {
 			case 'H':
 				ehci0_toggle ^= 0x1;
 				break;
+			case 'Z':
+				handle_reg_sec_menu();
+				break;
 			case 's':
 			case 'S':
 				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "sgaen", sga_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "mpcie2_clk", mpcie2_clk_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
-				save_flash( bootlist, max_lines );
+				save_flash(flash_address, bootlist, max_lines, spi_wp_toggle);
 				// fall through to exit ...
 			case 'x':
 			case 'X':
@@ -336,7 +316,6 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  r Restore boot order defaults\n");
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
-	printf("  l Legacy console redirection - Currently %s\n", (sga_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
@@ -425,94 +404,6 @@ static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 ma
 	// copy selection into top position
 	copy_list_line(temp_line, &(buffer[0][0]) );
 	id[0] = ln;
-}
-
-/*******************************************************************************/
-static inline int init_flash(void)
-{
-	flash_device = spi_flash_probe(0, 0, 0, 0);
-
-	if (!flash_device)
-		return -1;
-
-	return 0;
-}
-
-/*******************************************************************************/
-static inline int is_flash_locked(void)
-{
-	return spi_flash_is_locked(flash_device);
-}
-
-/*******************************************************************************/
-static inline int lock_flash(void)
-{
-	return spi_flash_lock(flash_device);
-}
-
-/*******************************************************************************/
-static inline int unlock_flash(void)
-{
-	return spi_flash_unlock(flash_device);
-}
-
-/*******************************************************************************/
-static void save_flash(char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines) {
-	int i = 0;
-	int k = 0;
-	int j, ret;
-	char cbfs_formatted_list[MAX_DEVICES * MAX_LENGTH];
-	u32 nvram_pos;
-
-	// compact the table into the expected packed list
-	for (j = 0; j < max_lines; j++) {
-		k = 0;
-		while (1) {
-			cbfs_formatted_list[i++] = buffer[j][k];
-			if (buffer[j][k] == NEWLINE )
-				break;
-			k++;
-		}
-	}
-	cbfs_formatted_list[i++] = NUL;
-
-	// try to unlock the flash if it is locked
-	if (spi_flash_is_locked(flash_device)) {
-		spi_flash_unlock(flash_device);
-		if (spi_flash_is_locked(flash_device)) {
-			printf("Flash is write protected. Exiting...\n");
-			return;
-		}
-	}
-
-	printf("Erasing Flash size 0x%x @ 0x%x\n", FLASH_SIZE_CHUNK, flash_address);
-	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
-	if (ret) {
-		printf("Erase failed, ret: %d\n", ret);
-	}
-
-	printf("Writing %d bytes @ 0x%x\n", i, flash_address);
-	// write first 512 bytes
-	for (nvram_pos = 0; nvram_pos < (i & 0xFFFC); nvram_pos += 4) {
-		ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(u32), (u32 *)(cbfs_formatted_list + nvram_pos));
-		if (ret) {
-			printf("Write failed, ret: %d\n", ret);
-		}
-	}
-	// write remaining filler characters in one run
-	ret = spi_flash_write(flash_device, nvram_pos + flash_address, sizeof(i % 4), (u32 *)(cbfs_formatted_list + nvram_pos));
-	if (ret) {
-		printf("Write failed, ret: %d\n", ret);
-	}
-
-	if (spi_wp_toggle) {
-		printf("Enabling flash write protect...\n");
-		spi_flash_lock(flash_device);
-	}
-
-	spi_wp_toggle = spi_flash_is_locked(flash_device);
-
-	printf("Done\n");
 }
 
 /*******************************************************************************/

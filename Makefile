@@ -1,99 +1,126 @@
 ##
-## This file is part of the libpayload project.
+## This file is part of the sortbootorder project.
 ##
 ## Copyright (C) 2008 Advanced Micro Devices, Inc.
+## Copyright (C) 2016 PC Engines GmbH
 ##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
-## 1. Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer.
-## 2. Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in the
-##    documentation and/or other materials provided with the distribution.
-## 3. The name of the author may not be used to endorse or promote products
-##    derived from this software without specific prior written permission.
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; version 2 of the License.
 ##
-## THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-## ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-## OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-## HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-## LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-## OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-## SUCH DAMAGE.
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
 ##
-COREBOOT_REL ?= mainline
-COREBOOT_ROOT ?= ../../../..
 
-include $(COREBOOT_ROOT)/.xcompile
+# compilation for coreboot mainline (4.5,4.6) or legacy (4.0)
+COREBOOT_REL ?= mainline
+VERSION ?= $(shell git describe --tags --dirty)
 
 src := $(CURDIR)
+# Assuming src path payloads/external/sortbootorder/sortbootorder/ by default
+KDIR ?= $(src)/../../../../
 srctree := $(src)
 build_dir := $(src)/build
 
-LIBCONFIG_PATH := $(realpath $(COREBOOT_ROOT)/payloads/libpayload)
-LIBPAYLOAD_DIR := $(build_dir)/libpayload
-HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_DIR)/lib/libpayload.a)
-LIB_CONFIG ?= configs/defconfig-tinycurses
+export V := $(V)
 
-CFLAGS := -Wall -Werror -Os -fno-builtin
-ifeq ($(COREBOOT_REL),legacy)
-	CFLAGS += -DCOREBOOT_LEGACY
+CONFIG_SHELL := sh
+UNAME_RELEASE := $(shell uname -r)
+MAKEFLAGS += -rR --no-print-directory
+
+# Make is silent per default, but 'make V=1' will show all compiler calls.
+ifneq ($(V),1)
+.SILENT:
 endif
 
-TARGET := sortbootorder
-OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
+HOSTCC ?= gcc
+HOSTCXX ?= g++
+HOSTCFLAGS := -I$(src)
+HOSTCXXFLAGS := -I$(src)
 
-ARCH-$(CONFIG_LP_ARCH_ARMV)    := arm
-ARCH-$(CONFIG_LP_ARCH_POWERPC) := powerpc
-ARCH-$(CONFIG_LP_ARCH_X86)     := x86_32
+LIBPAYLOAD_PATH := $(realpath $(KDIR)/payloads/libpayload)
+LIBPAYLOAD_OBJ := $(build_dir)/libpayload
+HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_OBJ)/lib/libpayload.a)
+LIBPAYLOAD_CONFIG ?= configs/defconfig-tinycurses
+OBJCOPY ?= objcopy
+
+INCLUDES = -I$(src)/include -I$(KDIR)/src/commonlib/include
+SRC_DIRS = spi utils
+SRC_FILES = $(wildcard *.c)
+SRC_FILES += $(wildcard spi/*.c)
+SRC_FILES += $(wildcard utils/*.c)
+OBJECTS = $(patsubst %.c,%.o,$(SRC_FILES))
+OBJS    = $(patsubst %,$(build_dir)/%,$(OBJECTS))
+DIRS    = $(patsubst %,$(build_dir)/%,$(SRC_DIRS))
+TARGET  = sortbootorder.elf
+
+all: real-all
+
+# in addition to the dependency below, create the file if it doesn't exist
+# to silence warnings about a file that would be generated anyway.
+$(if $(wildcard .xcompile),,$(eval $(shell $(KDIR)/util/xcompile/xcompile $(XGCCPATH) > .xcompile || rm -f .xcompile)))
+.xcompile: $(KDIR)/util/xcompile/xcompile
+	$< $(XGCCPATH) > $@.tmp
+	\mv -f $@.tmp $@ 2> /dev/null || rm -f $@.tmp $@
+
+CONFIG_COMPILER_GCC := y
+ARCH-y     := x86_32
+
+include .xcompile
 
 CC := $(CC_$(ARCH-y))
 AS := $(AS_$(ARCH-y))
 OBJCOPY := $(OBJCOPY_$(ARCH-y))
 
-LPCC := CC="$(CC)" $(LIBPAYLOAD_DIR)/bin/lpgcc
-LPAS := AS="$(AS)" $(LIBPAYLOAD_DIR)/bin/lpas
+LPCC := CC="$(CC)" $(LIBPAYLOAD_OBJ)/bin/lpgcc
+LPAS := AS="$(AS)" $(LIBPAYLOAD_OBJ)/bin/lpas
 
-# Make is silent per default, but 'make V=1' will show all compiler calls.
-ifneq ($(V),1)
-	Q := @
+CFLAGS += -Wall -Werror -Os -fno-builtin $(CFLAGS_$(ARCH-y)) $(INCLUDES)
+ifeq ($(COREBOOT_REL),legacy)
+	CFLAGS += -DCOREBOOT_LEGACY
 endif
 
-all: Makefile $(TARGET).elf
+real-all: version $(TARGET)
 
-$(TARGET).elf: $(OBJS) libpayload
-	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(LPCC) $(CFLAGS) -o $@ $(OBJS)
+version:
+	sed -e "s/@version@/\"$(VERSION)\"/" version.h.in > version.h
 
-%.o: %.c libpayload
-	$(Q)printf "  LPCC      $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(LPCC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+$(TARGET): $(OBJS) libpayload $(DIRS)
+	printf "    LPCC       $(subst $(CURDIR)/,,$(@)) (LINK)\n"
+	$(LPCC) -o $@ $(OBJS)
+	$(OBJCOPY) --only-keep-debug $@ $(TARGET).debug
+	$(OBJCOPY) --strip-debug $@
+	$(OBJCOPY) --add-gnu-debuglink=$(TARGET).debug $@
 
-%.S.o: %.S libpayload
-	$(Q)printf "  LPAS      $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(LPAS) $(ASFLAGS) --32 -o $@ $<
+$(build_dir)/%.o: $(src)/%.c libpayload $(DIRS)
+	printf "    LPCC       $(subst $(CURDIR)/,,$(@))\n"
+	$(LPCC) $(CFLAGS) -c -o $@ $<
+
+$(DIRS):
+	mkdir -p $(DIRS)
+
+defaultbuild:
+	$(MAKE) all
 
 ifneq ($(strip $(HAVE_LIBPAYLOAD)),)
 libpayload:
-	$(Q)printf "Found Libpayload $(LIBPAYLOAD_DIR).\n"
+	printf "Found Libpayload $(LIBPAYLOAD_OBJ).\n"
 else
+LPOPTS=obj="$(CURDIR)/lpbuild" DOTCONFIG="$(CURDIR)/lp.config"
 libpayload:
-	$(Q)printf "Building libpayload @ $(LIBCONFIG_PATH).\n"
-	$(Q)make -C $(LIBCONFIG_PATH) distclean
-	$(Q)make -C $(LIBCONFIG_PATH) defconfig KBUILD_DEFCONFIG=$(LIB_CONFIG)
-	$(Q)make -C $(LIBCONFIG_PATH) DESTDIR=$(build_dir) install
+	printf "Building libpayload @ $(LIBPAYLOAD_PATH).\n"
+	$(MAKE) -C $(LIBPAYLOAD_PATH) $(LPOPTS) distclean coreinfo_obj=$(build_dir)/libptmp
+	$(MAKE) -C $(LIBPAYLOAD_PATH) $(LPOPTS) defconfig KBUILD_DEFCONFIG=$(LIBPAYLOAD_CONFIG)
+	$(MAKE) -C $(LIBPAYLOAD_PATH) $(LPOPTS) install DESTDIR=$(build_dir)
 endif
 
 clean:
-	$(Q)rm -f $(TARGET).elf $(TARGET).debug *.o
+	rm -rf *.elf *.elf.debug build/*.o .xcompile
 
 distclean: clean
-	$(Q)rm -rf $(build_dir)
+	rm -rf build lpbuild lp.config*
 
+.PHONY: clean distclean
 
-.PHONY: all clean distclean do-it-all depend with-depends without-depends debian postinst
