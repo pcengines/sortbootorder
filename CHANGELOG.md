@@ -13,6 +13,7 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 - hidden menu with security registers access for writing the custom serial
   number
 - `Legacy serial console redirection` option removed
+- automated versioning
 
 ### Changed
 - some code refactoring
