@@ -16,7 +16,7 @@
 
 # compilation for coreboot mainline (4.5,4.6) or legacy (4.0)
 COREBOOT_REL ?= mainline
-VERSION ?= $(git describe --tags --abbrev=0)
+VERSION ?= $(shell git describe --tags --dirty)
 
 src := $(CURDIR)
 # Assuming src path payloads/external/sortbootorder/sortbootorder/ by default
