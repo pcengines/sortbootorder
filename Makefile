@@ -16,6 +16,7 @@
 
 # compilation for coreboot mainline (4.5,4.6) or legacy (4.0)
 COREBOOT_REL ?= mainline
+VERSION ?= $(git describe --tags --abbrev=0)
 
 src := $(CURDIR)
 # Assuming src path payloads/external/sortbootorder/sortbootorder/ by default
@@ -81,7 +82,10 @@ ifeq ($(COREBOOT_REL),legacy)
 	CFLAGS += -DCOREBOOT_LEGACY
 endif
 
-real-all: $(TARGET)
+real-all: version $(TARGET)
+
+version:
+	sed -e "s/{version}/\"$(VERSION)\"/" version.h.in > version.h
 
 $(TARGET): $(OBJS) libpayload $(DIRS)
 	printf "    LPCC       $(subst $(CURDIR)/,,$(@)) (LINK)\n"
