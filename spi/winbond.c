@@ -7,7 +7,7 @@
  * Licensed under the GPL-2 or later.
  */
 
-#define SPI_DEBUG
+//#define SPI_DEBUG
 
 #include <stdlib.h>
 #include <spi/spi_flash.h>
