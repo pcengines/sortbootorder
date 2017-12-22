@@ -8,6 +8,11 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.6.5] - 2017-12-29
+### Added
+- Support for restoring EHCI, PXE, UARTc/d, USB boot, serial console, mPCIe2 CLK
+default values
+
 ## [v4.6.4] - 2017-11-30
 ### Added
 - hidden menu with security registers access for writing the custom serial
@@ -120,7 +125,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.4...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.5...master
+[v4.6.5]: https://github.com/pcengines/sortbootorder/compare/v4.6.4...v4.6.5
 [v4.6.4]: https://github.com/pcengines/sortbootorder/compare/v4.6.3...v4.6.4
 [v4.6.3]: https://github.com/pcengines/sortbootorder/compare/v4.5.7...v4.6.3
 [v4.5.7]: https://github.com/pcengines/sortbootorder/compare/v4.5.6...v4.5.7
