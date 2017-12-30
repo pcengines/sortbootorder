@@ -51,6 +51,7 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 static int get_line_number(u8 line_start, u8 line_end, char key );
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
 static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value);
+static void refresh_tag_values(u8 max_lines);
 
 /*** local variables ***/
 static int flash_address;
@@ -176,6 +177,7 @@ int main(void) {
 				for (i = 0; i < max_lines && i < bootlist_def_ln; i++ )
 					copy_list_line(&(bootlist_def[i][0]), &(bootlist[i][0]));
 				int_ids( bootlist, max_lines, bootlist_def_ln );
+				refresh_tag_values(bootlist_def_ln);
 				break;
 			case 'n':
 			case 'N':
@@ -297,17 +299,19 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("Boot order - type letter to move device to top.\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
 		for (y = 0; y < lineDef_cnt; y++) {
-			if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0) {
-				unique = 1;
-				for (j = 0; j < y; j++) {
-					if (strcmp_printable_char(&bootlist_map[y][0], &bootlist_map[j][0])  ==  0)
-						unique = 0;
-				}
-				if (unique) {
-					strcpy(print_device, &bootlist_map[y][0]);
-					print_device[strlen(print_device)-1] = '\0';
-					printf("  %s %s\n", print_device, (device_toggle[y]) ? "" : "(disabled)");
-					break;
+			if(bootlist_def[y][0] == '/') {
+				if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0) {
+					unique = 1;
+					for (j = 0; j < y; j++) {
+						if (strcmp_printable_char(&bootlist_map[y][0], &bootlist_map[j][0])  ==  0)
+							unique = 0;
+					}
+					if (unique) {
+						strcpy(print_device, &bootlist_map[y][0]);
+						print_device[strlen(print_device)-1] = '\0';
+						printf("  %s %s\n", print_device, (device_toggle[y]) ? "" : "(disabled)");
+						break;
+					}
 				}
 			}
 		}
@@ -330,10 +334,12 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt ) {
 int i,y;
 	for (i = 0; i < line_cnt; i++ ) {
-		for (y = 0; y < lineDef_cnt; y++) {
-			if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0) {
-				strncpy(&id[i], &(bootlist_map[y][0]), 1);
-				break;
+		if (buffer[i][0] == '/') {
+			for (y = 0; y < lineDef_cnt; y++) {
+				if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0) {
+					strncpy(&id[i], &(bootlist_map[y][0]), 1);
+					break;
+				}
 			}
 		}
 	}
@@ -430,5 +436,56 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines
 		buffer[*max_lines][strlen(tag)+2] = '\n';
 		buffer[*max_lines][strlen(tag)+3] = '0';
 		(*max_lines)++;
+	}
+}
+
+/*******************************************************************************/
+static void refresh_tag_values(u8 max_lines)
+{
+	int i;
+	char *token;
+
+	for ( i = 0; i < max_lines; i++) {
+		token = strstr(&(bootlist_def[i][0]), "pxen");
+		if(token) {
+			token += strlen("pxen");
+			ipxe_toggle = strtoul(token, NULL, 10);
+	  	}
+
+		token = strstr(&(bootlist_def[i][0]), "usben");
+		if(token) {
+			token += strlen("usben");
+			usb_toggle = strtoul(token, NULL, 10);
+		}
+
+		token = strstr(&(bootlist_def[i][0]), "scon");
+		if(token) {
+			token += strlen("scon");
+			console_toggle = strtoul(token, NULL, 10);
+		}
+
+		token = strstr(&(bootlist_def[i][0]), "ehcien");
+		if(token) {
+			token += strlen("ehcien");
+			ehci0_toggle = strtoul(token, NULL, 10);
+		}
+
+		token = strstr(&(bootlist_def[i][0]), "uartc");
+		if(token) {
+			token += strlen("uartc");
+			uartc_toggle = strtoul(token, NULL, 10);
+		}
+
+		token = strstr(&(bootlist_def[i][0]), "uartd");
+		if(token) {
+			token += strlen("uartd");
+			uartd_toggle = strtoul(token, NULL, 10);
+		}
+
+		token = strstr(&(bootlist_def[i][0]), "mpcie2_clk");
+		if(token) {
+			token += strlen("mpcie2_clk");
+			mpcie2_clk_toggle = strtoul(token, NULL, 10);
+		}
 	}
 }
