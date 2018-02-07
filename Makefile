@@ -82,6 +82,10 @@ ifeq ($(COREBOOT_REL),legacy)
 	CFLAGS += -DCOREBOOT_LEGACY
 endif
 
+ifeq ($(SPI_DEBUG),1)
+	CFLAGS += -DSPI_DEBUG -DSPI_TRACE_ENABLED
+endif
+
 real-all: version $(TARGET)
 
 version:
