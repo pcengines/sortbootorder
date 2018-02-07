@@ -187,6 +187,24 @@ static int macronix_erase(struct spi_flash *flash, u32 offset, size_t len)
 	return spi_flash_cmd_erase(flash, CMD_MX25XX_SE, offset, len);
 }
 
+static int macronix_unlock(struct spi_flash *flash)
+{
+	// TODO
+	return 0;
+}
+
+static int macronix_lock(struct spi_flash *flash)
+{
+	// TODO
+	return 0;
+}
+
+static int macronix_is_locked(struct spi_flash *flash)
+{
+	// TODO
+	return 0;
+}
+
 struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 {
 	const struct macronix_spi_flash_params *params;
@@ -214,7 +232,9 @@ struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 	mcx->params = params;
 	mcx->flash.spi = spi;
 	mcx->flash.name = params->name;
-
+	mcx->flash.lock = macronix_lock;
+	mcx->flash.unlock = macronix_unlock;
+	mcx->flash.is_locked = macronix_is_locked;
 	mcx->flash.write = macronix_write;
 	mcx->flash.spi_erase = macronix_erase;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
