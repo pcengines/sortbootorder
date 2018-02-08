@@ -86,6 +86,10 @@ ifeq ($(SPI_DEBUG),1)
 	CFLAGS += -DSPI_DEBUG -DSPI_TRACE_ENABLED
 endif
 
+ifneq ($(APU1),y)
+	CFLAGS += -DFCH_YANGTZEE
+endif
+
 real-all: version $(TARGET)
 
 version:

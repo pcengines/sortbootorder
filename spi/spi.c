@@ -39,9 +39,6 @@ static u32 spibar;
 // Support for YANGTZEE FCH spi controller
 //
 
-// TODO: should be undefined for apu1
-#define FCH_YANGTZEE
-
 #ifdef SPI_TRACE_ENABLED
     #define SPI_TRACE(...) printf( __VA_ARGS__);
 #else
@@ -266,7 +263,6 @@ void spi_init(void)
 {
     pcidev_t dev  = PCI_DEV(0,0x14,3);
     spibar = pci_read_config32(dev, 0xA0) & ~0x1F;
-    spi_debug("SF: spibar %x\n", spibar);
 }
 
 #if defined (CONFIG_SB800_IMC_FWM)
