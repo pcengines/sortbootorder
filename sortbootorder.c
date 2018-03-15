@@ -201,7 +201,6 @@ int main(void) {
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
-#ifndef TARGET_APU1
 			case 'w':
 			case 'W':
 				if (spi_wp_toggle) {
@@ -211,7 +210,6 @@ int main(void) {
 				}
 				spi_wp_toggle = is_flash_locked();
 				break;
-#endif
 			case 't':
 			case 'T':
 				console_toggle ^= 0x1;
@@ -346,8 +344,8 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 #ifndef TARGET_APU1
 	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n", (mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
-	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
 #endif
+	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
