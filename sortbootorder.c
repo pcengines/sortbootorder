@@ -61,10 +61,17 @@ static u8 usb_toggle;
 static u8 spi_wp_toggle;
 
 static u8 console_toggle;
+
+#ifndef TARGET_APU1
 static u8 ehci0_toggle;
+#endif
+
 static u8 uartc_toggle;
 static u8 uartd_toggle;
+
+#ifndef TARGET_APU1
 static u8 mpcie2_clk_toggle;
+#endif
 
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
@@ -107,7 +114,11 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
+#ifdef TARGET_APU1
+	printf("\n### PC Engines apu1 setup %s ###\n", SORTBOOTORDER_VER);
+#else
 	printf("\n### PC Engines apu2 setup %s ###\n", SORTBOOTORDER_VER);
+#endif
 
 	if (init_flash()) {
 		printf("Can't initialize flash device!\n");
@@ -145,9 +156,11 @@ int main(void) {
 	token += strlen("scon");
 	console_toggle = token ? strtoul(token, NULL, 10) : 1;
 
+#ifndef TARGET_APU1
 	token = cbfs_find_string("ehcien", BOOTORDER_FILE);
 	token += strlen("ehcien");
 	ehci0_toggle = token ? strtoul(token, NULL, 10) : 1;
+#endif
 
 	token = cbfs_find_string("uartc", BOOTORDER_FILE);
 	token += strlen("uartc");
@@ -157,10 +170,11 @@ int main(void) {
 	token += strlen("uartd");
 	uartd_toggle = token ? strtoul(token, NULL, 10) : 0;
 
+#ifndef TARGET_APU1
 	token = cbfs_find_string("mpcie2_clk", BOOTORDER_FILE);
 	token += strlen("mpcie2_clk");
 	mpcie2_clk_toggle = token ? strtoul(token, NULL, 10) : 0;
-
+#endif
 
 	spi_wp_toggle = is_flash_locked();
 
@@ -187,6 +201,7 @@ int main(void) {
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
+#ifndef TARGET_APU1
 			case 'w':
 			case 'W':
 				if (spi_wp_toggle) {
@@ -196,6 +211,7 @@ int main(void) {
 				}
 				spi_wp_toggle = is_flash_locked();
 				break;
+#endif
 			case 't':
 			case 'T':
 				console_toggle ^= 0x1;
@@ -208,6 +224,7 @@ int main(void) {
 			case 'P':
 				uartd_toggle ^= 0x1;
 				break;
+#ifndef TARGET_APU1
 			case 'm':
 			case 'M':
 				mpcie2_clk_toggle ^= 0x1;
@@ -219,6 +236,7 @@ int main(void) {
 			case 'Z':
 				handle_reg_sec_menu();
 				break;
+#endif
 			case 's':
 			case 'S':
 				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
@@ -226,8 +244,10 @@ int main(void) {
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
+#ifndef TARGET_APU1
 				update_tag_value(bootlist, &max_lines, "mpcie2_clk", mpcie2_clk_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
+#endif
 				save_flash(flash_address, bootlist, max_lines, spi_wp_toggle);
 				// fall through to exit ...
 			case 'x':
@@ -323,9 +343,11 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
+#ifndef TARGET_APU1
 	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n", (mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
+#endif
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
@@ -463,12 +485,13 @@ static void refresh_tag_values(u8 max_lines)
 			token += strlen("scon");
 			console_toggle = strtoul(token, NULL, 10);
 		}
-
+#ifndef TARGET_APU1
 		token = strstr(&(bootlist_def[i][0]), "ehcien");
 		if(token) {
 			token += strlen("ehcien");
 			ehci0_toggle = strtoul(token, NULL, 10);
 		}
+#endif
 
 		token = strstr(&(bootlist_def[i][0]), "uartc");
 		if(token) {
@@ -481,11 +504,12 @@ static void refresh_tag_values(u8 max_lines)
 			token += strlen("uartd");
 			uartd_toggle = strtoul(token, NULL, 10);
 		}
-
+#ifndef TARGET_APU1
 		token = strstr(&(bootlist_def[i][0]), "mpcie2_clk");
 		if(token) {
 			token += strlen("mpcie2_clk");
 			mpcie2_clk_toggle = strtoul(token, NULL, 10);
 		}
+#endif
 	}
 }
