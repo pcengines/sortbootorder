@@ -86,7 +86,9 @@ ifeq ($(SPI_DEBUG),1)
 	CFLAGS += -DSPI_DEBUG -DSPI_TRACE_ENABLED
 endif
 
-ifneq ($(APU1),y)
+ifeq ($(APU1),y)
+	CFLAGS += -DTARGET_APU1
+else
 	CFLAGS += -DFCH_YANGTZEE
 endif
 
