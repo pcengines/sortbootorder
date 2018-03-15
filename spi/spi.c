@@ -187,53 +187,33 @@ static void execute_command(void)
 	while ((readb(spibar + 2) & 1) && (readb(spibar+3) & 0x80));
 }
 
-static int compare_internal_fifo_pointer(uint8_t want)
-{
-	uint8_t have = readb(spibar + 0xd) & 0x07;
-	want %= FIFO_SIZE_OLD;
-	if (have != want) {
-		spi_debug("AMD SPI FIFO pointer corruption! Pointer is %d, wanted %d\n", have, want);
-		return 1;
-	} else {
-		spi_debug("AMD SPI FIFO pointer is %d, wanted %d\n", have, want);
-		return 0;
-	}
-}
-
 int spi_xfer(struct spi_slave *slave, const void *dout,
 		unsigned int bitsout, void *din, unsigned int bitsin)
 {
 	/* First byte is cmd which can not being sent through FIFO. */
-	u32 cmd = *(u32 *)dout++;
+	u8 cmd = *(u8 *)dout++;
 	u8 readoffby1;
-	u32 readwrite;
+	u8 readwrite;
 	u8 bytesout, bytesin;
 	u8 count;
 
-	writeb(cmd, spibar + 0);
-
+	bitsout -= 8;
 	bytesout = bitsout / 8;
 	bytesin  = bitsin / 8;
-
-	bytesout--;
 
 	readoffby1 = bytesout ? 0 : 1;
 
 	readwrite = (bytesin + readoffby1) << 4 | bytesout;
 	writeb(readwrite, spibar + 1);
+	writeb(cmd, spibar + 0);
 
 	reset_internal_fifo_pointer();
 	for (count = 0; count < bytesout; count++, dout++) {
-		writeb(*(u32 *)dout, spibar + 0x0C);
+		writeb(*(u8 *)dout, spibar + 0x0C);
 	}
-	if (compare_internal_fifo_pointer(bytesout))
-		return -1;
 
 	reset_internal_fifo_pointer();
 	execute_command();
-
-	if (compare_internal_fifo_pointer(bytesout + bytesin))
-		return -1;
 
 	reset_internal_fifo_pointer();
 	/* Skip the bytes we sent. */
@@ -241,19 +221,10 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 		readb(spibar + 0x0C);
 	}
 
-	if (compare_internal_fifo_pointer(bytesout))
-		return -1;
-
 	//reset_internal_fifo_pointer();
 	for (count = 0; count < bytesin; count++, din++) {
 		*(u8 *)din = readb(spibar + 0x0C);
 	}
-
-	if (compare_internal_fifo_pointer(bytesout + bytesin))
-		return -1;
-
-	if(readb(spibar + 1) != readwrite)
-		return -1;
 
 	return 0;
 }
