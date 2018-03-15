@@ -50,6 +50,13 @@
 #define CMD_MX25XX_RES        0xab	/* Release from DP, and Read Signature */
 
 #define MACRONIX_SR_WIP		(1 << 0)	/* Write-in-Progress */
+#define MACRONIX_SR_WEN		(1 << 0)
+#define MACRONIX_SR_BP0		(1 << 2)
+#define MACRONIX_SR_BP1		(1 << 3)
+#define MACRONIX_SR_BP2		(1 << 4)
+#define MACRONIX_SR_BP3		(1 << 5)
+#define MACRONIX_SR_SRWD	(1 << 7)
+
 
 struct macronix_spi_flash_params {
 	u16 idcode;
@@ -187,21 +194,71 @@ static int macronix_erase(struct spi_flash *flash, u32 offset, size_t len)
 	return spi_flash_cmd_erase(flash, CMD_MX25XX_SE, offset, len);
 }
 
+static int macronix_set_lock_flags(struct spi_flash *flash, int lock)
+{
+	int ret;
+	u8 cmd;
+	u8 status;
+
+	flash->spi->rw = SPI_WRITE_FLAG;
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		spi_debug("SF: Unable to claim SPI bus\n");
+		return ret;
+	}
+
+	ret = spi_flash_cmd(flash->spi, CMD_MX25XX_RDSR, &status, 1);
+	if (ret) {
+		goto out;
+	}
+
+	if (lock) {
+		status |= MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0;
+	} else {
+		status &= ~(MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0);
+	}
+
+
+	ret = spi_flash_cmd(flash->spi, CMD_MX25XX_WREN, NULL, 0);
+	if (ret < 0) {
+		spi_debug("SF: Enabling Write failed\n");
+		goto out;
+	}
+
+	cmd = CMD_MX25XX_WRSR;
+	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd), &status, sizeof(status));
+	if (ret < 0) {
+		spi_debug("SF: Status register write failed\n");
+		goto out;
+	}
+
+out:
+	spi_release_bus(flash->spi);
+	return ret;
+}
+
+
 static int macronix_unlock(struct spi_flash *flash)
 {
-	// TODO
-	return 0;
+	return macronix_set_lock_flags(flash, 0);
 }
 
 static int macronix_lock(struct spi_flash *flash)
 {
-	// TODO
-	return 0;
+	return macronix_set_lock_flags(flash, 1);
 }
 
 static int macronix_is_locked(struct spi_flash *flash)
 {
-	// TODO
+	u8 status = 0;
+
+	spi_flash_cmd(flash->spi, CMD_MX25XX_RDSR, &status, 1);
+
+	if ((status & (MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0))
+	           == (MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0)) {
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -260,22 +317,22 @@ struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 	mcx->flash.name = params->name;
 	mcx->flash.write = macronix_write;
 	mcx->flash.spi_erase = macronix_erase;
-	/* The following are not yet implemented.
-	 * Implement to enable BIOS WP and Security Registers support.
-	 */
 	mcx->flash.lock = macronix_lock;
 	mcx->flash.unlock = macronix_unlock;
 	mcx->flash.is_locked = macronix_is_locked;
+	/* The following are not yet implemented.
+	 * Implement to enable BIOS WP and Security Registers support.
+	 */
 	mcx->flash.sec_sts = macronix_sec_sts;
 	mcx->flash.sec_read = macronix_sec_read;
 	mcx->flash.sec_prog = macronix_sec_program;
 	mcx->flash.sec_lock = macronix_sec_lock;
 
-#if CONFIG_SPI_FLASH_NO_FAST_READ
-	mcx->flash.read = spi_flash_cmd_read_slow;
-#else
+//#if CONFIG_SPI_FLASH_NO_FAST_READ
+//	mcx->flash.read = spi_flash_cmd_read_slow;
+//#else
 	mcx->flash.read = spi_flash_cmd_read_fast;
-#endif
+//#endif
 	mcx->flash.sector_size = params->page_size * params->pages_per_sector;
 	mcx->flash.size = mcx->flash.sector_size * params->sectors_per_block *
 		params->nr_blocks;
