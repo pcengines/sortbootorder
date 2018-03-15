@@ -205,6 +205,32 @@ static int macronix_is_locked(struct spi_flash *flash)
 	return 0;
 }
 
+static int macronix_sec_read(struct spi_flash *flash, u32 offset, size_t len, void *buf)
+{
+	// TODO
+	return 0;
+}
+
+static int macronix_sec_program(struct spi_flash *flash, u32 offset, size_t len, const void *buf)
+{
+	// TODO
+	return 0;
+}
+
+static int macronix_sec_sts(struct spi_flash *flash)
+{
+	// TODO
+	return 0;
+}
+
+static int macronix_sec_lock(struct spi_flash *flash, u8 reg)
+{
+	// TODO
+	return 0;
+}
+
+
+
 struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 {
 	const struct macronix_spi_flash_params *params;
@@ -232,11 +258,19 @@ struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 	mcx->params = params;
 	mcx->flash.spi = spi;
 	mcx->flash.name = params->name;
+	mcx->flash.write = macronix_write;
+	mcx->flash.spi_erase = macronix_erase;
+	/* The following are not yet implemented.
+	 * Implement to enable BIOS WP and Security Registers support.
+	 */
 	mcx->flash.lock = macronix_lock;
 	mcx->flash.unlock = macronix_unlock;
 	mcx->flash.is_locked = macronix_is_locked;
-	mcx->flash.write = macronix_write;
-	mcx->flash.spi_erase = macronix_erase;
+	mcx->flash.sec_sts = macronix_sec_sts;
+	mcx->flash.sec_read = macronix_sec_read;
+	mcx->flash.sec_prog = macronix_sec_program;
+	mcx->flash.sec_lock = macronix_sec_lock;
+
 #if CONFIG_SPI_FLASH_NO_FAST_READ
 	mcx->flash.read = spi_flash_cmd_read_slow;
 #else
