@@ -232,6 +232,15 @@ static int macronix_set_lock_flags(struct spi_flash *flash, int lock)
 		goto out;
 	}
 
+	spi_flash_cmd_wait_ready(flash, 100);
+
+	ret = spi_flash_cmd(flash->spi, CMD_MX25XX_WRDI, NULL, 0);
+	if (ret < 0) {
+		spi_debug("SF: Status register write disable failed\n");
+		goto out;
+	}
+
+	ret = spi_flash_cmd_wait_ready(flash, 100);
 out:
 	spi_release_bus(flash->spi);
 	return ret;
