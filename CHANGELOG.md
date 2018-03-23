@@ -12,6 +12,9 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 ### Added
 - Support for APU1 target
 
+### Fixed
+- Error message when bootorder{,_map,_def} not found
+
 ## [v4.6.5] - 2017-12-29
 ### Added
 - Support for restoring EHCI, PXE, UARTc/d, USB boot, serial console, mPCIe2 CLK
