@@ -373,7 +373,7 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 
 	cbfs_dat = (char *) cbfs_get_file_content( CBFS_DEFAULT_MEDIA, filename, CBFS_TYPE_RAW, &cbfs_length );
 	if (!cbfs_dat) {
-		printf("Error: file [%%s] not found!\n");
+		printf("Error: file [%s] not found!\n", filename);
 		return 1;
 	}
 
