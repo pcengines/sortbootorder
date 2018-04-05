@@ -8,7 +8,7 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
-## [v4.6.8] - 2018-03-22
+## [v4.6.8] - 2018-04-06
 ### Added
 - Support for APU1 target
 
