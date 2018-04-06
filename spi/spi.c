@@ -18,6 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +38,6 @@ static u32 spibar;
 //
 // Support for YANGTZEE FCH spi controller
 //
-#define FCH_YANGTZEE
 
 #ifdef SPI_TRACE_ENABLED
     #define SPI_TRACE(...) printf( __VA_ARGS__);
@@ -171,16 +171,18 @@ int spi_xfer(struct spi_slave *slave,
 //
 #else
 
+#define FIFO_SIZE_OLD		8
+
 static void reset_internal_fifo_pointer(void)
 {
 	do {
-		writeb(spibar + 2, readb(spibar + 2) | 0x10);
+		writeb(readb(spibar + 2) | 0x10, spibar + 2);
 	} while (readb(spibar + 0xD) & 0x7);
 }
 
 static void execute_command(void)
 {
-	writeb(spibar + 2, readb(spibar + 2) | 1);
+	writeb(readb(spibar + 2) | 1, spibar + 2);
 
 	while ((readb(spibar + 2) & 1) && (readb(spibar+3) & 0x80));
 }
@@ -189,9 +191,9 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 		unsigned int bitsout, void *din, unsigned int bitsin)
 {
 	/* First byte is cmd which can not being sent through FIFO. */
-	u32 cmd = *(u32 *)dout++;
+	u8 cmd = *(u8 *)dout++;
 	u8 readoffby1;
-	u32 readwrite;
+	u8 readwrite;
 	u8 bytesout, bytesin;
 	u8 count;
 
@@ -202,12 +204,12 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	readoffby1 = bytesout ? 0 : 1;
 
 	readwrite = (bytesin + readoffby1) << 4 | bytesout;
-	writeb(spibar + 1, readwrite);
-	writeb(spibar + 0, cmd);
+	writeb(readwrite, spibar + 1);
+	writeb(cmd, spibar + 0);
 
 	reset_internal_fifo_pointer();
 	for (count = 0; count < bytesout; count++, dout++) {
-		writeb(spibar + 0x0C, *(u32 *)dout);
+		writeb(*(u8 *)dout, spibar + 0x0C);
 	}
 
 	reset_internal_fifo_pointer();
@@ -216,13 +218,15 @@ int spi_xfer(struct spi_slave *slave, const void *dout,
 	reset_internal_fifo_pointer();
 	/* Skip the bytes we sent. */
 	for (count = 0; count < bytesout; count++) {
-		cmd = readb(spibar + 0x0C);
+		readb(spibar + 0x0C);
 	}
 
 	//reset_internal_fifo_pointer();
 	for (count = 0; count < bytesin; count++, din++) {
 		*(u8 *)din = readb(spibar + 0x0C);
 	}
+
+	return 0;
 }
 #endif
 
