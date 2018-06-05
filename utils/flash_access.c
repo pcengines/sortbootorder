@@ -63,6 +63,11 @@ inline int read_sec(u8 reg, u8 addr, void *buf, size_t len)
 	return spi_flash_sec_read(flash_device, sec_addr(reg, addr), len, buf);
 }
 
+inline int erase_sec(u8 reg, u8 addr, size_t len)
+{
+	return spi_flash_sec_erase(flash_device, sec_addr(reg, addr), len);
+}
+
 inline int prog_sec(u8 reg, u8 addr, const void *buf, size_t len)
 {
 	return spi_flash_sec_prog(flash_device, sec_addr(reg, addr), len, buf);
