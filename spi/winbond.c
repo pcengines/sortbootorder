@@ -386,6 +386,29 @@ out:
 	return ret;
 }
 
+static int winbond_sec_erase(struct spi_flash *flash, u32 offset, size_t len)
+{
+	int ret = 1;
+	u8 cmd[4];
+	u8 reg = (offset >> 8) & 0xFF;
+	u8 addr = offset & 0xFF;
+	u32 tmp_sect_size = flash->sector_size;
+
+	if (reg != ADDR_W25_SEC1 && reg != ADDR_W25_SEC2 && reg != ADDR_W25_SEC3) {
+		spi_debug("SF: Wrong security register\n");
+		return 1;
+	}
+
+	flash->sector_size = 1;
+	ret = spi_flash_cmd_erase(flash, CMD_W25_ER_SEC, offset & (0xFF << 8), 1);
+	flash->sector_size = tmp_sect_size;
+
+	if (ret)
+		spi_debug("SF: Can't erase sec reg\n");
+
+	return ret;
+}
+
 static int winbond_sec_sts(struct spi_flash *flash)
 {
 	u8 status = 0;
@@ -494,6 +517,7 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 	stm->flash.sec_sts = winbond_sec_sts;
 	stm->flash.sec_read = winbond_sec_read;
 	stm->flash.sec_prog = winbond_sec_program;
+	stm->flash.sec_erase = winbond_sec_erase;
 	stm->flash.sec_lock = winbond_sec_lock;
 #if CONFIG_SPI_FLASH_NO_FAST_READ
 	stm->flash.read = spi_flash_cmd_read_slow;
