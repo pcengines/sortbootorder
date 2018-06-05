@@ -63,6 +63,7 @@ struct spi_flash {
 	int		(*sec_read)(struct spi_flash *flash, u32 offset, size_t len, void *buf);
 	int		(*sec_prog)(struct spi_flash *flash, u32 offset, size_t len,
 			const void *buf);
+	int		(*sec_erase)(struct spi_flash *flash, u32 offset, size_t len);
 	int		(*sec_lock)(struct spi_flash *flash, u8 reg);
 };
 
@@ -116,6 +117,11 @@ static inline int spi_flash_sec_prog(struct spi_flash *flash, u32 offset, size_t
 		const void *buf)
 {
 	return flash->sec_prog(flash, offset, len, buf);
+}
+
+static inline int spi_flash_sec_erase(struct spi_flash *flash, u32 offset, size_t len)
+{
+	return flash->sec_erase(flash, offset, len);
 }
 
 static inline int spi_flash_sec_lock(struct spi_flash *flash, u8 reg)
