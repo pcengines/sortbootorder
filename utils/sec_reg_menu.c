@@ -31,9 +31,7 @@ static void print_reg_sec_menu(void) {
 	printf("  r        - read serial from security register 1\n");
 	printf("  w serial - write serial to security register 1\n");
 	printf("  s        - get security registers OTP status\n");
-#if 0
-	printf("  l reg    - lock security register reg\n");
-#endif
+/*      printf("  l reg    - lock security register reg\n"); */
 	printf("  q        - exit menu\n");
 	printf("\n");
 }
@@ -148,11 +146,9 @@ void handle_reg_sec_menu(void) {
 		case 's':
 			cmd_read_sec_sts();
 			break;
-#if 0
 		case 'l':
 			cmd_lock_sec(command);
 			break;
-#endif
 		case 'q':
 			end = TRUE;
 			break;

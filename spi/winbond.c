@@ -389,9 +389,7 @@ out:
 static int winbond_sec_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
 	int ret = 1;
-	u8 cmd[4];
 	u8 reg = (offset >> 8) & 0xFF;
-	u8 addr = offset & 0xFF;
 	u32 tmp_sect_size = flash->sector_size;
 
 	if (reg != ADDR_W25_SEC1 && reg != ADDR_W25_SEC2 && reg != ADDR_W25_SEC3) {
