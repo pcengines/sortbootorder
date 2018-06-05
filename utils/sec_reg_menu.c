@@ -30,6 +30,7 @@ static void print_reg_sec_menu(void) {
 	printf("\n\n--- Security registers menu ---\n\n");
 	printf("  r        - read serial from security register 1\n");
 	printf("  w serial - write serial to security register 1\n");
+	printf("  e        - erase security registers content\n");
 	printf("  s        - get security registers OTP status\n");
 /*      printf("  l reg    - lock security register reg\n"); */
 	printf("  q        - exit menu\n");
