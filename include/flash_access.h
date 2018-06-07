@@ -31,6 +31,7 @@ int lock_flash(void);
 int unlock_flash(void);
 int read_sec_status(void);
 int read_sec(u8 reg, u8 addr, void *buf, size_t len);
+int erase_sec(u8 reg, u8 addr, size_t len);
 int prog_sec(u8 reg, u8 addr, const void *buf, size_t len);
 int lock_sec(u8 reg);
 void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines, u8 spi_wp_toggle);

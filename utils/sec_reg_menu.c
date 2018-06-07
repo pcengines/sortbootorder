@@ -30,8 +30,9 @@ static void print_reg_sec_menu(void) {
 	printf("\n\n--- Security registers menu ---\n\n");
 	printf("  r        - read serial from security register 1\n");
 	printf("  w serial - write serial to security register 1\n");
+	printf("  e        - erase security registers content\n");
 	printf("  s        - get security registers OTP status\n");
-/*	printf("  l reg    - lock security register reg\n"); */
+/*      printf("  l reg    - lock security register reg\n"); */
 	printf("  q        - exit menu\n");
 	printf("\n");
 }
@@ -80,6 +81,22 @@ static void cmd_read_sec_sts(void)
 	printf("  reg 3 = %s\n", (status & 0x4) ? "locked" : "writeable");
 }
 
+
+static void cmd_erase_sec(void)
+{
+	u8 reg = SERIAL_REG_NO;
+	u8 offset = SERIAL_OFFSET;
+	int ret;
+
+	ret = erase_sec(reg, offset, MAX_SERIAL_LEN);
+	if (ret) {
+		printf("can't erase security registers\n");
+		return;
+	}
+
+	printf("serial erased\n");
+}
+
 static void cmd_lock_sec(char *cmd)
 {
 	u8 reg;
@@ -123,6 +140,9 @@ void handle_reg_sec_menu(void) {
 			break;
 		case 'w':
 			cmd_write_serial(command);
+			break;
+		case 'e':
+		        cmd_erase_sec();
 			break;
 		case 's':
 			cmd_read_sec_sts();
