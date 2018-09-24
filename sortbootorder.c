@@ -98,6 +98,8 @@ int main(void) {
 	u8 line_start = 0;
 	u8 line_number = 0;
 	char *token;
+	char *bootorder_data;
+	size_t cbfs_length;
 #ifndef COREBOOT_LEGACY
 	struct cbfs_handle *bootorder_handle;
 #endif
@@ -138,40 +140,43 @@ int main(void) {
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 #endif
 
+
+	bootorder_data = (char *) cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, &cbfs_length );
+
 	// Get required files from CBFS
 	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
 	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
 
 	// Init ipxe and serial status
-	token = cbfs_find_string("pxen", BOOTORDER_FILE);
+	token = strstr(bootorder_data, "pxen");
 	token += strlen("pxen");
 	ipxe_toggle = token ? strtoul(token, NULL, 10) : 1;
 
-	token = cbfs_find_string("usben", BOOTORDER_FILE);
+	token = strstr(bootorder_data, "usben");
 	token += strlen("usben");
 	usb_toggle = token ? strtoul(token, NULL, 10) : 1;
 
-	token = cbfs_find_string("scon", BOOTORDER_FILE);
+	token = strstr(bootorder_data, "scon");
 	token += strlen("scon");
 	console_toggle = token ? strtoul(token, NULL, 10) : 1;
 
 #ifndef TARGET_APU1
-	token = cbfs_find_string("ehcien", BOOTORDER_FILE);
+	token = strstr(bootorder_data, "ehcien");
 	token += strlen("ehcien");
 	ehci0_toggle = token ? strtoul(token, NULL, 10) : 1;
 #endif
 
-	token = cbfs_find_string("uartc", BOOTORDER_FILE);
+	token = strstr(bootorder_data, "uartc");
 	token += strlen("uartc");
 	uartc_toggle = token ? strtoul(token, NULL, 10) : 0;
 
-	token = cbfs_find_string("uartd", BOOTORDER_FILE);
+	token = strstr(bootorder_data, "uartd");
 	token += strlen("uartd");
 	uartd_toggle = token ? strtoul(token, NULL, 10) : 0;
 
 #ifndef TARGET_APU1
-	token = cbfs_find_string("mpcie2_clk", BOOTORDER_FILE);
+	token = strstr(bootorder_data, "mpcie2_clk");
 	token += strlen("mpcie2_clk");
 	mpcie2_clk_toggle = token ? strtoul(token, NULL, 10) : 0;
 #endif
