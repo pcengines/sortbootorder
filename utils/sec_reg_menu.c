@@ -51,7 +51,7 @@ static void cmd_read_serial(void)
 	}
 
 	if (buf[0] != 0xff) {
-		printf("serial: %10s\n", buf);
+		printf("serial: %s\n", buf);
 	} else {
 		printf("serial: \n");
 	}
