@@ -50,7 +50,11 @@ static void cmd_read_serial(void)
 		return;
 	}
 
-	printf("serial: %s\n", buf);
+	if (buf[0] != 0xff) {
+		printf("serial: %10s\n", buf);
+	} else {
+		printf("serial: \n");
+	}
 }
 
 static void cmd_write_serial(char *cmd)
