@@ -8,6 +8,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 
 ## [Unreleased]
 
+## [v4.6.11] - 2018-09-28
+### Fixed
+- printing serial number when security registers are erased
+
 ## [v4.6.10] - 2018-09-24
 ### Changed
 - rewrite CBFS access using existing libpayload API
@@ -140,7 +144,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.10...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.11...master
+[v4.6.11]: https://github.com/pcengines/sortbootorder/compare/v4.6.10...v4.6.11
 [v4.6.10]: https://github.com/pcengines/sortbootorder/compare/v4.6.9...v4.6.10
 [v4.6.9]: https://github.com/pcengines/sortbootorder/compare/v4.6.8...v4.6.9
 [v4.6.8]: https://github.com/pcengines/sortbootorder/compare/v4.6.5...v4.6.8
