@@ -18,11 +18,8 @@
 #define CMD_W25_WREN       0x06	/* Write Enable */
 #define CMD_W25_WRDI       0x04	/* Write Disable */
 #define CMD_W25_RDSR1      0x05	/* Read 1st Status Register */
-#define CMD_W25_WRSR1      0x01	/* Write 1st Status Register */
 #define CMD_W25_RDSR2      0x35	/* Read 2nd Status Register */
-#define CMD_W25_WRSR2      0x31	/* Write 2nd Status Register */
-#define CMD_W25_RDSR3      0x15	/* Read 3rd Status Register */
-#define CMD_W25_WRSR3      0x11	/* Write 3rd Status Register */
+#define CMD_W25_WRSR       0x01	/* Write Status Register */
 #define CMD_W25_READ       0x03	/* Read Data Bytes */
 #define CMD_W25_FAST_READ  0x0b	/* Read Data Bytes at Higher Speed */
 #define CMD_W25_PP         0x02	/* Page Program */
@@ -205,7 +202,7 @@ static int winbond_set_lock_flags(struct spi_flash *flash, int lock)
 {
 	int ret;
 	u8 cmd;
-	u8 s1, s2, s3;
+	u8 status[2];
 
 	flash->spi->rw = SPI_WRITE_FLAG;
 	ret = spi_claim_bus(flash->spi);
@@ -214,30 +211,26 @@ static int winbond_set_lock_flags(struct spi_flash *flash, int lock)
 		return ret;
 	}
 
-	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR1, &s1, 1);
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR1, &status[0], 1);
 	if (ret) {
+		spi_debug("SF: Unable to read Status Register 1\n");
 		goto out;
 	}
 
-	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &s2, 1);
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &status[1], 1);
 	if (ret) {
-		goto out;
-	}
-
-	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR3, &s3, 1);
-	if (ret) {
+		spi_debug("SF: Unable to read Status Register 2\n");
 		goto out;
 	}
 
 	if (lock) {
-		s1 |= REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0;
+		status[0] |= REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0;
 	} else {
-		s1 &= ~(REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0);
+		status[0] &= ~(REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0);
 	}
 
-	s1 &= ~(REG_W25_SEC | REG_W25_TB);
-	s2 &= ~(REG_W25_SRP1 | REG_W25_CMP);
-	s3 &= ~(REG_W25_WPS);
+	status[0] &= ~(REG_W25_SEC | REG_W25_TB);
+	status[1] &= ~(REG_W25_SRP1 | REG_W25_CMP);
 
 	ret = spi_flash_cmd(flash->spi, CMD_W25_WREN, NULL, 0);
 	if (ret < 0) {
@@ -245,22 +238,9 @@ static int winbond_set_lock_flags(struct spi_flash *flash, int lock)
 		goto out;
 	}
 
-	cmd = CMD_W25_WRSR2;
-	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd), &s2, sizeof(s2));
-	if (ret < 0) {
-		spi_debug("SF: Status register write failed\n");
-		goto out;
-	}
-
-	cmd = CMD_W25_WRSR3;
-	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd), &s3, sizeof(s3));
-	if (ret < 0) {
-		spi_debug("SF: Status register write failed\n");
-		goto out;
-	}
-
-	cmd = CMD_W25_WRSR1;
-	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd), &s1, sizeof(s1));
+	cmd = CMD_W25_WRSR;
+	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd),
+				  status, sizeof(status));
 	if (ret < 0) {
 		spi_debug("SF: Status register write failed\n");
 		goto out;
@@ -425,8 +405,8 @@ static int winbond_sec_sts(struct spi_flash *flash)
 static int winbond_sec_lock(struct spi_flash *flash, u8 reg)
 {
 	int ret;
-	u8 status = 0;
 	u8 cmd;
+	u8 status[2];
 
 	flash->spi->rw = SPI_WRITE_FLAG;
 	ret = spi_claim_bus(flash->spi);
@@ -435,21 +415,27 @@ static int winbond_sec_lock(struct spi_flash *flash, u8 reg)
 		return ret;
 	}
 
-	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &status, sizeof(status));
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR1, &status[0], 1);
 	if (ret) {
-		spi_debug("SF: problem reading the status register\n");
+		spi_debug("SF: Unable to read Status Register 1\n");
+		goto out;
+	}
+
+	ret = spi_flash_cmd(flash->spi, CMD_W25_RDSR2, &status[1], 1);
+	if (ret) {
+		spi_debug("SF: Unable to read Status Register 2\n");
 		goto out;
 	}
 
 	switch (reg) {
 	case 1:
-		status |= REG_W25_LB1;
+		status[1] |= REG_W25_LB1;
 		break;
 	case 2:
-		status |= REG_W25_LB2;
+		status[1] |= REG_W25_LB2;
 		break;
 	case 3:
-		status |= REG_W25_LB3;
+		status[1] |= REG_W25_LB3;
 		break;
 	default:
 		spi_debug("SF: can't lock sec register, wrong index given\n");
@@ -462,9 +448,9 @@ static int winbond_sec_lock(struct spi_flash *flash, u8 reg)
 		goto out;
 	}
 
-	cmd = CMD_W25_WRSR2;
+	cmd = CMD_W25_WRSR;
 	ret = spi_flash_cmd_write(flash->spi, &cmd, sizeof(cmd),
-		 &status, sizeof(status));
+				  status, sizeof(status));
 	if (ret) {
 		spi_debug("SF: Status register write failed\n");
 		goto out;
