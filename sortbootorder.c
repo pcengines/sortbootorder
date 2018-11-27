@@ -170,9 +170,9 @@ int main(void) {
 	if (token == NULL)
 		com2_available = 0;
 	else {
+		com2_available = 1;
 		token += strlen("com2en");
 		com2_toggle = token ? strtoul(token, NULL, 10) : 1;
-		com2_available = 1;
 	}
 
 #ifndef TARGET_APU1
@@ -259,7 +259,8 @@ int main(void) {
 				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "com2en", com2_toggle + '0');
+				if (com2_available)
+					update_tag_value(bootlist, &max_lines, "com2en", com2_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
 #ifndef TARGET_APU1
