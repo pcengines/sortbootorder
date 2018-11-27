@@ -58,6 +58,7 @@ static int flash_address;
 
 static u8 ipxe_toggle;
 static u8 usb_toggle;
+
 static u8 spi_wp_toggle;
 
 static u8 console_toggle;
@@ -221,12 +222,7 @@ int main(void) {
 				break;
 			case 'w':
 			case 'W':
-				if (spi_wp_toggle) {
-					unlock_flash();
-				} else {
-					lock_flash();
-				}
-				spi_wp_toggle = is_flash_locked();
+				spi_wp_toggle ^= 0x1;
 				break;
 			case 'k':
 			case 'K':
@@ -263,7 +259,7 @@ int main(void) {
 				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "scon", com2_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "com2en", com2_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
 #ifndef TARGET_APU1
