@@ -44,6 +44,7 @@ saves boot order in flash.
   n Network/PXE boot - Currently Disabled
   u USB boot - Currently Enabled
   t Serial console - Currently Enabled
+  k Redirect console output to COM2 - Currently Disabled
   o UART C - Currently Enabled
   p UART D - Currently Enabled
   m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently Disabled
@@ -63,13 +64,14 @@ key.
 * `r Restore boot order defaults` - restores boot order to default settings
 * `n Network/PXE boot` - enables/disables the network boot (iPXE)
 * `u USB boot` - enables/disables boot from USB drives
-* `l Legacy console redirection` - enables/disables serial redirection to the
-    sgabios (serial text console emulation).
+* `k Redirect console output to COM2` - enables/disables serial redirection to
+  the COM2 port. Leaves COM1 entirely unused (except Memtest86+ still printing
+  on COM1) for user needs.
 * `t Serial console` - enables/disables output to the serial console
   Useful for legacy software, which is not using native serial port output, but
-    uses standard PC text console instead (eg. FreeDOS).
+  uses standard PC text console instead (eg. FreeDOS).
 * `o UART C` - enables/disables UART C on GPIO header. Disabled UART means
-     enabled GPIO.
+  enabled GPIO.
 * `p UART D` - enables/disables UART D on GPIO header. Disabled UART means
      enabled GPIO.
 * `m Force mPCIe2 slot CLK (GPP3 PCIe)` - enabling this option forces GPP3 PCIe
@@ -80,7 +82,7 @@ key.
   slot.
 * `h EHCI0 controller` - enables/disables EHCI0 controller (used in apu3)
 * `w Enable BIOS write protect` - enables/disables BIOS WP functionality. For
-    details, see descritption in [BIOS WP option](#bios-wp-option).
+  details, see descritption in [BIOS WP option](#bios-wp-option).
 * `x Exit setup without save` - exits setup menu without saving the settings
 * `s Save configuration and exit` - exits setup menu saving the settings
 
