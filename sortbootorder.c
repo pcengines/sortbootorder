@@ -58,9 +58,14 @@ static int flash_address;
 
 static u8 ipxe_toggle;
 static u8 usb_toggle;
+
 static u8 spi_wp_toggle;
 
 static u8 console_toggle;
+static u8 com2_toggle;
+
+// apu5 does not have COM2
+static u8 com2_available;
 
 #ifndef TARGET_APU1
 static u8 ehci0_toggle;
@@ -161,6 +166,15 @@ int main(void) {
 	token += strlen("scon");
 	console_toggle = token ? strtoul(token, NULL, 10) : 1;
 
+	token = strstr(bootorder_data, "com2en");
+	if (token == NULL)
+		com2_available = 0;
+	else {
+		com2_available = 1;
+		token += strlen("com2en");
+		com2_toggle = token ? strtoul(token, NULL, 10) : 1;
+	}
+
 #ifndef TARGET_APU1
 	token = strstr(bootorder_data, "ehcien");
 	token += strlen("ehcien");
@@ -208,12 +222,12 @@ int main(void) {
 				break;
 			case 'w':
 			case 'W':
-				if (spi_wp_toggle) {
-					unlock_flash();
-				} else {
-					lock_flash();
-				}
-				spi_wp_toggle = is_flash_locked();
+				spi_wp_toggle ^= 0x1;
+				break;
+			case 'k':
+			case 'K':
+				if (com2_available)
+					com2_toggle ^= 0x1;
 				break;
 			case 't':
 			case 'T':
@@ -245,6 +259,8 @@ int main(void) {
 				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
+				if (com2_available)
+					update_tag_value(bootlist, &max_lines, "com2en", com2_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
 #ifndef TARGET_APU1
@@ -344,6 +360,8 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
+	if (com2_available)
+		printf("  k Redirect console output to COM2 - Currently %s\n", (com2_toggle) ? "Enabled" : "Disabled");
 	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
 	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
 #ifndef TARGET_APU1
@@ -487,6 +505,11 @@ static void refresh_tag_values(u8 max_lines)
 		if(token) {
 			token += strlen("scon");
 			console_toggle = strtoul(token, NULL, 10);
+		}
+		token = strstr(&(bootlist_def[i][0]), "com2en");
+		if(token && com2_available) {
+			token += strlen("com2en");
+			com2_toggle = strtoul(token, NULL, 10);
 		}
 #ifndef TARGET_APU1
 		token = strstr(&(bootlist_def[i][0]), "ehcien");
