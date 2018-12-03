@@ -213,9 +213,12 @@ static int macronix_set_lock_flags(struct spi_flash *flash, int lock)
 	}
 
 	if (lock) {
-		status |= MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0;
+		status |= MACRONIX_SR_SRWD | MACRONIX_SR_BP3 | MACRONIX_SR_BP2 |
+			  MACRONIX_SR_BP1 | MACRONIX_SR_BP0;
 	} else {
-		status &= ~(MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0);
+		status &= ~(MACRONIX_SR_SRWD | MACRONIX_SR_BP3 |
+			    MACRONIX_SR_BP2 | MACRONIX_SR_BP1 |
+			    MACRONIX_SR_BP0);
 	}
 
 
@@ -263,8 +266,10 @@ static int macronix_is_locked(struct spi_flash *flash)
 
 	spi_flash_cmd(flash->spi, CMD_MX25XX_RDSR, &status, 1);
 
-	if ((status & (MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0))
-	           == (MACRONIX_SR_BP3 | MACRONIX_SR_BP2 | MACRONIX_SR_BP1 | MACRONIX_SR_BP0)) {
+	if ((status & (MACRONIX_SR_SRWD | MACRONIX_SR_BP3 | MACRONIX_SR_BP2 |
+		       MACRONIX_SR_BP1 | MACRONIX_SR_BP0)) ==
+		      (MACRONIX_SR_SRWD |MACRONIX_SR_BP3 | MACRONIX_SR_BP2 |
+                       MACRONIX_SR_BP1 | MACRONIX_SR_BP0)) {
 		return 1;
 	}
 
@@ -330,7 +335,7 @@ struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 	mcx->flash.unlock = macronix_unlock;
 	mcx->flash.is_locked = macronix_is_locked;
 	/* The following are not yet implemented.
-	 * Implement to enable BIOS WP and Security Registers support.
+	 * Implement to enable Security Registers support.
 	 */
 	mcx->flash.sec_sts = macronix_sec_sts;
 	mcx->flash.sec_read = macronix_sec_read;
