@@ -8,6 +8,7 @@ saves boot order in flash.
 
 <!-- TOC -->
 
+- [Sortbootorder](#sortbootorder)
 - [Contents](#contents)
 - [Theory of operation](#theory-of-operation)
   - [Example menu view](#example-menu-view)
@@ -49,6 +50,7 @@ saves boot order in flash.
   p UART D - Currently Enabled
   m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently Disabled
   h EHCI0 controller - Currently Disabled
+  l Core Performance Boost - Currently Enabled
   w Enable BIOS write protect - Currently Disabled
   x Exit setup without save
   s Save configuration and exit
@@ -81,6 +83,7 @@ key.
   It is advised to set to `Disable` if no extension card is attached to mPCIe2
   slot.
 * `h EHCI0 controller` - enables/disables EHCI0 controller (used in apu3)
+* `l Core Performance Boost` - enables/disables CPU boost.
 * `w Enable BIOS write protect` - enables/disables BIOS WP functionality. For
   details, see descritption in [BIOS WP option](#bios-wp-option).
 * `x Exit setup without save` - exits setup menu without saving the settings
@@ -109,6 +112,7 @@ Relevant content of this file may look like this:
   pxen0
   scon1
   usben1
+  ...
   ```
 
 Rest of this file is filled with characters to meet that 4096 bytes
@@ -144,12 +148,19 @@ file is used to match device letter and description with corresponding node from
 
   ```
   Network/PXE boot - Disabled
-  Serial console redirection - Disabled
+  Serial console - Enabled
   USB boot - Enabled
+  Force mPCIe2 slot CLK (GPP3 PCIe) - Disabled
+  UART C - Enabled
+  UART D - Enabled
+  EHCI0 controller - Disabled
+  Core Performance Boost - Enabled
+  Redirect console output to COM2 - Disabled
+  BIOS write protect - Disabled
   ```
 
 Default bootorder list settings are taken from
-[bootorder_def file](https://github.com/pcengines/coreboot/blob/coreboot-4.5.x/src/mainboard/pcengines/apu2/bootorder_def).
+[bootorder_def file](https://github.com/pcengines/coreboot/blob/develop/src/mainboard/pcengines/apu2/bootorder_def).
 They can be restored by hitting `r` key. It only restores to default boot
 list order, not other specific settings such as `USB enable` or `serial console
 enable`.
@@ -159,7 +170,7 @@ enable`.
 `Enable BIOS write protect` option (`w`) enables or disables flash write
 protection feature. When enabled, then BIOS WP jumper (1-2 pins of J2) controls
 the possibility of writing to flash. When BIOS WP is shorted and option is
-enabled no writes to flash is possible, including disabling the write protect
+enabled no writes to flash are possible, including disabling the write protect
 option itself and updating the BIOS is also not possible (using e.g. `flashrom`
 tool).
 

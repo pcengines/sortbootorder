@@ -7,6 +7,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.6.13] - 2019-02-26
+### Added
+- CPU boost runtime configuration
+
 ## [v4.6.12] - 2018-12-03
 ### Fixed
 - BIOS WP feature for different SPI parts
