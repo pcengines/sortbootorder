@@ -24,95 +24,114 @@
 
 typedef union {
 	struct  {
-		u8 busy : 1,
-		u8 wel  : 1,
-		u8 bp0  : 1,
-		u8 bp1  : 1,
-		u8 bp2  : 1,
-		u8 tb   : 1,
-		u8 sec  : 1,
-		u8 srp0 : 1,
+		u8 busy : 1;
+		u8 wel  : 1;
+		u8 bp0  : 1;
+		u8 bp1  : 1;
+		u8 bp2  : 1;
+		u8 tb   : 1;
+		u8 sec  : 1;
+		u8 srp0 : 1;
 	};
 	u8 reg_value;
 } winbond_sr1_t;
 
 typedef union {
 	struct  {
-		u8 srp1 : 1,
-		u8 qe   : 1,
-		u8 rsvd : 1,
-		u8 lb1  : 1,
-		u8 lb2  : 1,
-		u8 lb3  : 1,
-		u8 cmp  : 1,
-		u8 sus : 1,
+		u8 srp1 : 1;
+		u8 qe   : 1;
+		u8 rsvd : 1;
+		u8 lb1  : 1;
+		u8 lb2  : 1;
+		u8 lb3  : 1;
+		u8 cmp  : 1;
+		u8 sus  : 1;
 	};
 	u8 reg_value;
 } winbond_sr2_t;
 
-#define PRINT_RANGE(x, range, cond) \
-	printf("%2d) Protected range #range%s\n", x, \
-		((#cond) ? " (currently enabled)" : "");
+#define BP_BITS		(sr1.bp0 | (sr1.bp1 << 1) | (sr1.bp2 << 2))
 
 static void print_block_protect_status1(void)
 {
 	winbond_sr1_t sr1;
 	winbond_sr2_t sr2;
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
 
-	u8 bp_bits = sr1.bp0 | (sr1.bp1 << 1) | (sr1.bp2 << 2);
-
-	PRINT_RANGE(1, 000000h – 000000h, !sr2.cmp && (bp_bits == 0));
-	PRINT_RANGE(2, 7E0000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 1) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(3, 7C0000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 2) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(4, 780000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 3) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(5, 700000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 4) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(6, 600000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 5) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(7, 400000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 6) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(8, 000000h – 01FFFFh,
-		    !sr2.cmp && (bp_bits == 1) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(9, 000000h – 03FFFFh,
-		    !sr2.cmp && (bp_bits == 2) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(10, 000000h – 07FFFFh,
-		    !sr2.cmp && sr1.bp2 && !sr1.bp1 && !sr1.sec && sr1.tb));
-	PRINT_RANGE(11, 000000h – 0FFFFFh,
-		    !sr2.cmp && (bp_bits == 4) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(12, 000000h – 1FFFFFh,
-		    !sr2.cmp && (bp_bits == 5) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(13, 000000h – 3FFFFFh,
-		    !sr2.cmp && (bp_bits == 6) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(14, 000000h – 7FFFFFh, !sr2.cmp && (bp_bits == 7));
-	PRINT_RANGE(15, 7FF000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 1) && sr1.sec && !sr1.tb));
-	PRINT_RANGE(16, 7FE000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 2) && sr1.sec && !sr1.tb));
-	PRINT_RANGE(17, 7FC000h – 7FFFFFh,
-		    !sr2.cmp && (bp_bits == 3) && sr1.sec && !sr1.tb));
-	PRINT_RANGE(18, 7F8000h – 7FFFFFh,
-		    !sr2.cmp && sr1.bp2 && !sr1.bp1 && sr1.sec && !sr1.tb));
-	PRINT_RANGE(19, 000000h – 000FFFh, 
-		    sr2.cmp && sr1.sec && sr1.tb && (bp_bits == 1)));
-	PRINT_RANGE(20, 000000h – 001FFFh,
-		    !sr2.cmp && sr1.sec && sr1.tb && (bp_bits == 2)));
-	PRINT_RANGE(21, 000000h – 003FFFh,
-		    !sr2.cmp && (bp_bits == 3) && sr1.sec && sr1.tb));
-	PRINT_RANGE(22, 000000h – 007FFFh,
-		    !sr2.cmp && (bp_bits == 4) && sr1.sec && sr1.tb));
+	u8 index = 0;
+	printf("%2d) Protected range 000000h – 000000h %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 0)) ? "(currently enabled)" : "");
+	printf("%2d) Protected range 7E0000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 1) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range 7C0000h – 7FFFFFh %s\\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 2) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range 780000h – 7FFFFFh %s\\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 3) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range 700000h – 7FFFFFh %s\\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 4) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range 600000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 5) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range 400000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 6) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 01FFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 1) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 03FFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 2) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 07FFFFh %s\n", ++index,
+	       (!sr2.cmp && sr1.bp2 && !sr1.bp1 && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 0FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 4) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 1FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 5) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 3FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 6) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 7)) ? "(currently enabled)" : "");
+	printf("%2d) Protected range  7FF000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 1) && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  7FE000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 2) && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  7FC000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 3) && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  7F8000h – 7FFFFFh %s\n", ++index,
+	       (!sr2.cmp && sr1.bp2 && !sr1.bp1 && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 000FFFh %s\n", ++index, 
+	       (!sr2.cmp && sr1.sec && sr1.tb && (BP_BITS == 1)) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 001FFFh %s\n", ++index,
+	       (!sr2.cmp && sr1.sec && sr1.tb && (BP_BITS == 2)) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 003FFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 3) && sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 007FFFh %s\n", ++index,
+	       (!sr2.cmp && (BP_BITS == 4) && sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
 }
 
 static void print_block_protect_status2(void)
@@ -120,60 +139,82 @@ static void print_block_protect_status2(void)
 	winbond_sr1_t sr1;
 	winbond_sr2_t sr2;
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
 
-	u8 bp_bits = sr1.bp0 | (sr1.bp1 << 1) | (sr1.bp2 << 2);
+	u8 index = 22;
 
-	PRINT_RANGE(23, 000000h – 7FFFFFh, sr2.cmp && (bp_bits == 0));
-	PRINT_RANGE(24, 000000h – 7DFFFFh,
-		    sr2.cmp && (bp_bits == 1) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(25, 000000h – 7BFFFFh,
-		    sr2.cmp && (bp_bits == 2) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(26, 000000h – 77FFFFFh,
-		    sr2.cmp && (bp_bits == 3) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(27, 000000h – 6FFFFFh,
-		    sr2.cmp && (bp_bits == 4) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(28, 000000h – 5FFFFFh,
-		    sr2.cmp && (bp_bits == 5) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(29, 000000h – 3FFFFFh,
-		    sr2.cmp && (bp_bits == 6) && !sr1.sec && !sr1.tb));
-	PRINT_RANGE(30, 020000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 1) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(31, 040000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 2) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(32, 080000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 3) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(33, 100000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 4) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(34, 200000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 5) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(35, 400000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 6) && !sr1.sec && sr1.tb));
-	PRINT_RANGE(36, 000000h – 000000h, sr2.cmp && (bp_bits == 7));
-	PRINT_RANGE(37, 000000h – 7FEFFFh,
-		    sr2.cmp && (bp_bits == 1) && sr1.sec && !sr1.tb));
-	PRINT_RANGE(38, 000000h – 7FDFFFh,
-		    sr2.cmp && (bp_bits == 2) && sr1.sec && !sr1.tb));
-	PRINT_RANGE(39, 000000h – 7FBFFFh,
-		    sr2.cmp && (bp_bits == 3) && sr1.sec && !sr1.tb));
-	PRINT_RANGE(40, 000000h – 7F7FFFh,
-		    sr2.cmp && sr1.bp2 && !sr1.bp1 && sr1.sec && !sr1.tb));
-	PRINT_RANGE(41, 001000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 1)&& sr1.sec && sr1.tb));
-	PRINT_RANGE(42, 002000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 2) && sr1.sec && sr1.tb));
-	PRINT_RANGE(43, 004000h – 7FFFFFh,
-		    sr2.cmp && (bp_bits == 3) && sr1.sec && sr1.tb));
-	PRINT_RANGE(44, 008000h – 7FFFFFh,
-		    sr2.cmp && sr1.bp2 && !sr1.bp1 && sr1.sec && sr1.tb));
+	printf("%2d) Protected range  000000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 0)) ? "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 7DFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 1) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 7BFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 2) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 77FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 3) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 6FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 4) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 5FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 5) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 3FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 6) && !sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  020000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 1) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  040000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 2) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  080000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 3) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  100000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 4) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  200000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 5) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  400000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 6) && !sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 000000h %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 7)) ? "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 7FEFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 1) && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 7FDFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 2) && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 7FBFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 3) && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  000000h – 7F7FFFh %s\n", ++index,
+	       (sr2.cmp && sr1.bp2 && !sr1.bp1 && sr1.sec && !sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  001000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 1)&& sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  002000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 2) && sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  004000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && (BP_BITS == 3) && sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
+	printf("%2d) Protected range  008000h – 7FFFFFh %s\n", ++index,
+	       (sr2.cmp && sr1.bp2 && !sr1.bp1 && sr1.sec && sr1.tb) ?
+	       "(currently enabled)" : "");
 }
 
 /* Return WP pin state HIGH = 1 (inactive) or LOW = 0 (active) */
@@ -182,8 +223,8 @@ static int get_hw_protect_state(void)
 	winbond_sr1_t sr1;
 	winbond_sr2_t sr2;
 
-	spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1);
-	spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1);
+	send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1);
+	send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1);
 
 	/* SRP0 not set, WP pin state does not matter */
 	if (!sr1.srp0)
@@ -195,7 +236,7 @@ static int get_hw_protect_state(void)
 
 	send_flash_cmd(CMD_W25_WREN, NULL, 0);
 	send_flash_cmd_write(CMD_W25_WRSR, 1, status_regs, 2);
-	spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1);
+	send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1);
 
 	/* SRP0 did not change, return that WP pin is active */
 	if (sr1.srp0)
@@ -206,7 +247,7 @@ static int get_hw_protect_state(void)
 	status_regs[0] = sr1.reg_value;
 	send_flash_cmd(CMD_W25_WREN, NULL, 0);
 	send_flash_cmd_write(CMD_W25_WRSR, 1, status_regs, 2);
-	spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1);
+	send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1);
 
 	/* Failsafe check, if state restored, return WP active, else error */
 	if(sr1.srp0)
@@ -224,12 +265,12 @@ static void print_sr_lock_status(void)
 	if (wp_pin == -1)
 		printf("Error in HW protect state\n");
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
@@ -240,7 +281,7 @@ static void print_sr_lock_status(void)
 	       (!sr1.srp0 && !sr2.srp1) ? "" : "NOT ",
 	       !sr1.srp0 ? " WP pin may be active.\n" : "");
 	printf("2) Status register is %sin Hardware Protected mode\n",
-	       (sr1.srp0 && !sr2.srp1 && (wp_pin == 0) ? "" : "NOT ");
+	       (sr1.srp0 && !sr2.srp1 && (wp_pin == 0)) ? "" : "NOT ");
 	printf("3) Status register is %sin Hardware Unprotected mode\n",
 	       (sr1.srp0 && !sr2.srp1 && (wp_pin == 1)) ? "" : "NOT ");
 	printf("4) Status register is %sin Power Supply Lock-Down mode\n",
@@ -254,12 +295,12 @@ static void clear_block_protection(void)
 	winbond_sr1_t sr1;
 	winbond_sr2_t sr2;
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
@@ -285,12 +326,12 @@ static void clear_block_protection(void)
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
@@ -312,7 +353,7 @@ static u8 bp_lookup[] = {
 	0x24, 0x28, 0x2C, 0x30, 0x34, 0x38, 0x0E,	// SEC=0, TB=1
 	0x44, 0x48, 0x4C, 0x50,				// SEC=1, TB=0
 	0x64, 0x68, 0x6C, 0x70,				// SEC=1, TB=1
-}
+};
 
 static void set_block_protection(char* command)
 {
@@ -336,16 +377,17 @@ static void set_block_protection(char* command)
 		return;
 	}
 
-	if (choice < 1 && choice > 44)
+	if (choice < 1 && choice > 44) {
 		printf("Invalid lock option\n");
 		return;
+	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
@@ -372,12 +414,12 @@ static void set_block_protection(char* command)
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
@@ -413,16 +455,17 @@ static void set_sr_lock(char* command)
 		return;
 	}
 
-	if (choice < 1 && choice > 5)
+	if (choice < 1 && choice > 5) {
 		printf("Invalid lock option\n");
 		return;
+	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
@@ -464,12 +507,12 @@ static void set_sr_lock(char* command)
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
 		return;
 	}
 
-	if (!spi_cmd_read(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
+	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
@@ -490,7 +533,7 @@ static void print_spi_lock_menu(void) {
 	printf("  b block_no	- set block protection (see status)\n");
 	printf("  c		- clear block protection\n");
 	printf("  s		- show status register lock (see status)\n");
-	printf("  l lock_type	- lock status register\n"); */
+	printf("  l lock_type	- lock status register\n");
 	printf("  q		- exit menu\n");
 	printf("Choose an option:\n");
 }
@@ -505,7 +548,10 @@ void handle_spi_lock_menu(void) {
 
 		switch(command[0]) {
 		case 'p':
-			print_block_protect_status();
+			print_block_protect_status1();
+			break;
+		case 'r':
+			print_block_protect_status2();
 			break;
 		case 'b':
 			set_block_protection(command);
