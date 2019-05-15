@@ -21,6 +21,7 @@
 #include <curses.h>
 #include <flash_access.h>
 #include <sec_reg_menu.h>
+#include <spi_lock_menu.h>
 #include "version.h"
 
 /*** defines ***/
@@ -254,6 +255,9 @@ int main(void) {
 			case 'l':
 			case 'L':
 				boost_toggle ^= 0x1;
+				break;
+			case 'Q':
+				handle_spi_lock_menu();
 				break;
 			case 'Z':
 				handle_reg_sec_menu();
