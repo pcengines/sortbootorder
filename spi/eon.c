@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <spi/spi_flash.h>
 #include <spi/spi.h>
-#include "spi_flash_internal.h"
+#include <spi/spi_flash_internal.h>
 
 
 /* EN25Q128-specific commands */

@@ -20,7 +20,7 @@
 #include <flash_access.h>
 #include <string.h>
 #include <spi/winbond_flash.h>
-#include <spi_lock_menu.h>
+#include <spi/spi_lock_menu.h>
 
 typedef union {
 	struct  {

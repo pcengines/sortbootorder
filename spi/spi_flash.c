@@ -15,7 +15,7 @@
 #include <string.h>
 #include <spi/spi_flash.h>
 #include <spi/spi.h>
-#include "spi_flash_internal.h"
+#include <spi/spi_flash_internal.h>
 
 static void spi_flash_addr(u32 addr, u8 *cmd)
 {

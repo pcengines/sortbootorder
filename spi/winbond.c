@@ -13,7 +13,7 @@
 #include <spi/spi_flash.h>
 #include <spi/spi.h>
 #include <spi/winbond_flash.h>
-#include "spi_flash_internal.h"
+#include <spi/spi_flash_internal.h>
 
 struct winbond_spi_flash_params {
 	uint16_t	id;

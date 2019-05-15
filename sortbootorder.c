@@ -21,7 +21,8 @@
 #include <curses.h>
 #include <flash_access.h>
 #include <sec_reg_menu.h>
-#include <spi_lock_menu.h>
+#include <spi/spi_lock_menu.h>
+
 #include "version.h"
 
 /*** defines ***/
