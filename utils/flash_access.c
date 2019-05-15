@@ -78,6 +78,18 @@ inline int lock_sec(u8 reg)
 	return spi_flash_sec_lock(flash_device, reg);
 }
 
+inline int send_flash_cmd(u8 cmd, void *response, size_t len)
+{
+	return spi_flash_cmd(flash_device, u8 cmd, response, len);
+}
+
+inline int send_flash_cmd_write(u8 command, size_t cmd_len, const void *data,
+				size_t data_len)
+{
+	const u8 *cmd = command;
+	return spi_flash_cmd_write(flash_device, cmd, cmd_len, data, data_len);
+}
+
 /*******************************************************************************/
 void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 	        u8 max_lines, u8 spi_wp_toggle) {
