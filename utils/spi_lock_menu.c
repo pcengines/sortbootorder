@@ -73,13 +73,13 @@ static void print_block_protect_status1(void)
 	printf("%2d) Protected range 7E0000h – 7FFFFFh %s\n", ++index,
 	       (!sr2.cmp && (BP_BITS == 1) && !sr1.sec && !sr1.tb) ?
 	       "(currently enabled)" : "");
-	printf("%2d) Protected range 7C0000h – 7FFFFFh %s\\n", ++index,
+	printf("%2d) Protected range 7C0000h – 7FFFFFh %s\n", ++index,
 	       (!sr2.cmp && (BP_BITS == 2) && !sr1.sec && !sr1.tb) ?
 	       "(currently enabled)" : "");
-	printf("%2d) Protected range 780000h – 7FFFFFh %s\\n", ++index,
+	printf("%2d) Protected range 780000h – 7FFFFFh %s\n", ++index,
 	       (!sr2.cmp && (BP_BITS == 3) && !sr1.sec && !sr1.tb) ?
 	       "(currently enabled)" : "");
-	printf("%2d) Protected range 700000h – 7FFFFFh %s\\n", ++index,
+	printf("%2d) Protected range 700000h – 7FFFFFh %s\n", ++index,
 	       (!sr2.cmp && (BP_BITS == 4) && !sr1.sec && !sr1.tb) ?
 	       "(currently enabled)" : "");
 	printf("%2d) Protected range 600000h – 7FFFFFh %s\n", ++index,
@@ -159,7 +159,7 @@ static void print_block_protect_status2(void)
 	printf("%2d) Protected range  000000h – 7BFFFFh %s\n", ++index,
 	       (sr2.cmp && (BP_BITS == 2) && !sr1.sec && !sr1.tb) ?
 	       "(currently enabled)" : "");
-	printf("%2d) Protected range  000000h – 77FFFFFh %s\n", ++index,
+	printf("%2d) Protected range  000000h – 7FFFFFh %s\n", ++index,
 	       (sr2.cmp && (BP_BITS == 3) && !sr1.sec && !sr1.tb) ?
 	       "(currently enabled)" : "");
 	printf("%2d) Protected range  000000h – 6FFFFFh %s\n", ++index,
@@ -277,9 +277,9 @@ static void print_sr_lock_status(void)
 
 	printf("SRP0=%d , SRP1=%d, WP=%c\n", sr1.srp0, sr2.srp1,
 	       ((wp_pin == -1) || !sr1.srp0) ? '?' : wp_pin + '0');
-	printf("1) Status register is %sin Software Protected mode\n%s",
+	printf("1) Status register is %sin Software Protected mode.%s\n",
 	       (!sr1.srp0 && !sr2.srp1) ? "" : "NOT ",
-	       !sr1.srp0 ? " WP pin may be active.\n" : "");
+	       (sr1.srp0 || sr2.srp1) ? "" : " WP pin may be active.");
 	printf("2) Status register is %sin Hardware Protected mode\n",
 	       (sr1.srp0 && !sr2.srp1 && (wp_pin == 0)) ? "" : "NOT ");
 	printf("3) Status register is %sin Hardware Unprotected mode\n",
@@ -297,13 +297,29 @@ static void clear_block_protection(void)
 
 	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
+		printf("Clearing block protection failed!\n");
 		return;
 	}
 
 	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
+		printf("Clearing block protection failed!\n");
 		return;
 	}
+
+	if (sr1.srp0 || sr2.srp1) {
+		printf("SPI status register protection is enabled.\n");
+		printf("Disable the protection first!\n");
+	}
+
+	/* 
+	 * Store old register values and mask only the protection bits:
+	 * SRPs, BPs, TB, SEC, LBs , CMP
+	 */
+	u8 status_regs_old[2] = { 
+		(sr1.reg_value & 0xFC) ,
+		(sr2.reg_value & 0x79)
+	};
 
 	sr1.bp0 = 0;
 	sr1.bp1 = 0;
@@ -328,18 +344,22 @@ static void clear_block_protection(void)
 
 	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
+		printf("Clearing block protection failed!\n");
 		return;
 	}
 
 	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
+		printf("Clearing block protection failed!\n");
 		return;
 	}
 
-	if (sr1.bp0 || sr1.bp1 || sr1.bp2 || sr1.tb || sr1.sec || sr2.cmp)
+	if(status_regs_old[0] != (sr1.reg_value & 0xFC) &&
+	   status_regs_old[1] != (sr2.reg_value & 0x79)) {
 		printf("Clearing block protection failed!\n");
-	else 
+	} else {
 		printf("Clearing block protection success!\n");
+	}
 }
 
 static u8 bp_lookup[] = {
@@ -384,21 +404,37 @@ static void set_block_protection(char* command)
 
 	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
+		printf("Setting block protection failed!\n");
 		return;
 	}
 
 	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
+		printf("Setting block protection failed!\n");
 		return;
 	}
+
+	if (sr1.srp0 || sr2.srp1) {
+		printf("SPI status register protection is enabled.\n");
+		printf("Disable the protection first!\n");
+	}
+
+	/* 
+	 * Store old register values and mask only the protection bits:
+	 * SRPs, BPs, TB, SEC, LBs , CMP
+	 */
+	u8 status_regs_old[2] = { 
+		(sr1.reg_value & 0xFC) ,
+		(sr2.reg_value & 0x79)
+	};
 
 	if (choice > 22)
 		sr2.cmp = 1;
 	else
 		sr2.cmp = 0;
-	
+
 	sr1.reg_value &= 0x83; // clear all BPs, SEC and TB
-	sr1.reg_value |= bp_lookup[choice]; // set required bits
+	sr1.reg_value |= bp_lookup[choice - 1]; // set required bits
 
 	u8 status_regs[2] = { sr1.reg_value, sr2.reg_value };
 
@@ -416,16 +452,18 @@ static void set_block_protection(char* command)
 
 	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
+		printf("Setting block protection failed!\n");
 		return;
 	}
 
 	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
+		printf("Setting block protection failed!\n");
 		return;
 	}
 
-	if(status_regs[0] != sr1.reg_value &&
-	   status_regs[1] != sr2.reg_value) {
+	if(status_regs_old[0] != (sr1.reg_value & 0xFC ) &&
+	   status_regs_old[1] != (sr2.reg_value & 0x79)) {
 		printf("Setting block protection failed!\n");
 	} else {
 		printf("Setting block protection success!\n");
@@ -486,11 +524,14 @@ static void set_sr_lock(char* command)
 	}
 
 	if (sr1.srp0 && sr2.srp1) {
-		printf("Warning: You are going to permanently lock status\n"
-		       "register. Are You sure? (y/n)\n");
-		char *command = readline("> ");
-		if (command[0] != 'y')
+		printf("WARNING: You are going to permanently lock status"
+		       " register\n");
+		command[0] = '\0'; // clear old readline buffer
+		char *prompt = readline("Are You sure? (y/n) ");
+		if (prompt[0] != 'y') {
+			printf("Aborting...\n");
 			return;
+		}
 	}
 
 	u8 status_regs[2] = { sr1.reg_value, sr2.reg_value };
@@ -509,11 +550,13 @@ static void set_sr_lock(char* command)
 
 	if (send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1)) {
 		printf("SPI status register 1 read failed!\n");
+		printf("Setting status register protection failed!\n");
 		return;
 	}
 
 	if (send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1)) {
 		printf("SPI status register 2 read failed!\n");
+		printf("Setting status register protection failed!\n");
 		return;
 	}
 
