@@ -226,8 +226,8 @@ static int get_hw_protect_state(void)
 	send_flash_cmd(CMD_W25_RDSR1, &sr1.reg_value, 1);
 	send_flash_cmd(CMD_W25_RDSR2, &sr2.reg_value, 1);
 
-	/* SRP0 not set, WP pin state does not matter */
-	if (!sr1.srp0)
+	/* SRP0 not set or SRP1 set, WP pin state does not matter */
+	if (!sr1.srp0 || sr2.srp1)
 		return 1;
 
 	/* Try clearing SRP0 bit, if success WP pin is high, else low */
@@ -576,13 +576,13 @@ static void set_sr_lock(char* command)
 
 static void print_spi_lock_menu(void) {
 	printf("\n\n--- SPI flash lock menu ---\n\n");
-	printf("  p		 - print block protection status (CMP=0)\n");
-	printf("  r		 - print block protection status (CMP=1)\n");
-	printf("  b block_no	 - set block protection (see status)\n");
-	printf("  c		 - clear block protection\n");
-	printf("  s		 - show status register lock\n");
-	printf("  l lock_type - lock status register (see status)\n");
-	printf("  q		 - exit menu\n");
+	printf("  p			- print block protection status (CMP=0)\n");
+	printf("  r			- print block protection status (CMP=1)\n");
+	printf("  b block_no		- set block protection (see status)\n");
+	printf("  c			- clear block protection\n");
+	printf("  s			- show status register lock\n");
+	printf("  l lock_type	- lock status register (see status)\n");
+	printf("  q			- exit menu\n");
 	printf("Choose an option:\n");
 }
 
