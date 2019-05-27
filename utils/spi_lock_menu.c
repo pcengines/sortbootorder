@@ -512,10 +512,10 @@ static void set_sr_lock(char* command)
 	{
 		case 0: sr1.srp0 = 0; sr2.srp1 = 0; break;
 		case 1: sr1.srp0 = 0; sr2.srp1 = 0; break;
-		case 2: sr1.srp0 = 0; sr2.srp1 = 0;
+		case 2: sr1.srp0 = 1; sr2.srp1 = 0;
 			printf("Check WP pin.\n");
 			break;
-		case 3: sr1.srp0 = 0; sr2.srp1 = 0;
+		case 3: sr1.srp0 = 1; sr2.srp1 = 0;
 			printf("Check WP pin.\n");
 			break;
 		case 4: sr1.srp0 = 0; sr2.srp1 = 1; break;
@@ -571,13 +571,13 @@ static void set_sr_lock(char* command)
 
 static void print_spi_lock_menu(void) {
 	printf("\n\n--- SPI flash lock menu ---\n\n");
-	printf("  p		- print block protection status (CMP=0)\n");
-	printf("  r		- print block protection status (CMP=1)\n");
-	printf("  b block_no	- set block protection (see status)\n");
-	printf("  c		- clear block protection\n");
-	printf("  s		- show status register lock (see status)\n");
-	printf("  l lock_type	- lock status register\n");
-	printf("  q		- exit menu\n");
+	printf("  p		 - print block protection status (CMP=0)\n");
+	printf("  r		 - print block protection status (CMP=1)\n");
+	printf("  b block_no	 - set block protection (see status)\n");
+	printf("  c		 - clear block protection\n");
+	printf("  s		 - show status register lock\n");
+	printf("  l lock_type - lock status register (see status)\n");
+	printf("  q		 - exit menu\n");
 	printf("Choose an option:\n");
 }
 
