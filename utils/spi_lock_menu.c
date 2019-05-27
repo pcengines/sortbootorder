@@ -425,7 +425,7 @@ static void set_block_protection(char* command)
 	 */
 	u8 status_regs_old[2] = { 
 		(sr1.reg_value & 0xFC) ,
-		(sr2.reg_value & 0x79)
+		(sr2.reg_value & 0x41)
 	};
 
 	if (choice > 22)
@@ -462,8 +462,8 @@ static void set_block_protection(char* command)
 		return;
 	}
 
-	if(status_regs_old[0] != (sr1.reg_value & 0xFC ) &&
-	   status_regs_old[1] != (sr2.reg_value & 0x79)) {
+	if(status_regs_old[0] == (sr1.reg_value & 0xFC ) &&
+	   status_regs_old[1] == (sr2.reg_value & 0x41)) {
 		printf("Setting block protection failed!\n");
 	} else {
 		printf("Setting block protection success!\n");
@@ -507,6 +507,11 @@ static void set_sr_lock(char* command)
 		printf("SPI status register 2 read failed!\n");
 		return;
 	}
+
+	u8 status_regs_old[2] = { 
+		(sr1.reg_value & 0x80) ,
+		(sr2.reg_value & 0x01)
+	};
 
 	switch(choice)
 	{
@@ -560,8 +565,8 @@ static void set_sr_lock(char* command)
 		return;
 	}
 
-	if(status_regs[0] != sr1.reg_value &&
-	   status_regs[1] != sr2.reg_value) {
+	if (status_regs_old[0] == (sr1.reg_value & 0x80) &&
+	    status_regs_old[1] == (sr2.reg_value & 0x01)) {
 		printf("Setting status register protection failed!\n");
 	} else {
 		printf("Setting status register protection success!\n");
