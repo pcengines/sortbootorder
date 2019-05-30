@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <spi/spi_flash.h>
 #include <spi/spi.h>
-#include "spi_flash_internal.h"
+#include <spi/spi_flash_internal.h>
 
 /* MX25xx-specific commands */
 #define CMD_MX25XX_WREN       0x06	/* Write Enable */

@@ -15,7 +15,7 @@
 #include <string.h>
 #include <spi/spi_flash.h>
 #include <spi/spi.h>
-#include "spi_flash_internal.h"
+#include <spi/spi_flash_internal.h>
 
 static void spi_flash_addr(u32 addr, u8 *cmd)
 {
@@ -217,6 +217,7 @@ static struct {
 	struct spi_flash *(*probe) (struct spi_slave *spi, u8 *idcode);
 } flashes[] = {
 	/* Keep it sorted by define name */
+	{ 0, 0x1f, spi_flash_probe_adesto, },
 	{ 0, 0x1c, spi_flash_probe_eon, },
 	{ 0, 0xc8, spi_flash_probe_gigadevice, },
 	{ 0, 0xc2, spi_flash_probe_macronix, },
