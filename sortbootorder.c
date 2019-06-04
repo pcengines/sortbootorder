@@ -32,16 +32,24 @@
 
 // These names come from bootorder_map file
 // indexes depend on device order in this file
-#define USB_1_SS           0
-#define USB_2_SS           1
-#define USB_1_HS           2
-#define USB_2_HS           3
-#define SDCARD             4
-#define MSATA              5
-#define SATA               6
-#define MPCIE1_SATA1       7
-#define MPCIE1_SATA2       8
-#define IPXE               9
+#define USB_1              0
+#define USB_2              1
+#define USB_3              2
+#define USB_4              3
+#define USB_5              4
+#define USB_6              5
+#define USB_7              6
+#define USB_8              7
+#define USB_9              8
+#define USB_10             9
+#define USB_11            10
+#define USB_12            11
+#define SDCARD            12
+#define MSATA             13
+#define SATA              14
+#define MPCIE1_SATA1      15
+#define MPCIE1_SATA2      16
+#define IPXE              17
 
 #define RESET() outb(0x06, 0x0cf9)
 
@@ -364,11 +372,19 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	int i,j,y,unique;
 	char print_device[MAX_LENGTH];
 
-	device_toggle[USB_1_SS] = usb_toggle;
-	device_toggle[USB_2_SS] = usb_toggle;
-	device_toggle[USB_1_HS] = usb_toggle;
-	device_toggle[USB_2_HS] = usb_toggle;
-	device_toggle[IPXE] = ipxe_toggle;
+	device_toggle[USB_1]  = usb_toggle;
+	device_toggle[USB_2]  = usb_toggle;
+	device_toggle[USB_3]  = usb_toggle;
+	device_toggle[USB_4]  = usb_toggle;
+	device_toggle[USB_5]  = usb_toggle;
+	device_toggle[USB_6]  = usb_toggle;
+	device_toggle[USB_7]  = usb_toggle;
+	device_toggle[USB_8]  = usb_toggle;
+	device_toggle[USB_9]  = usb_toggle;
+	device_toggle[USB_10] = usb_toggle;
+	device_toggle[USB_11] = usb_toggle;
+	device_toggle[USB_12] = usb_toggle;
+	device_toggle[IPXE]   = ipxe_toggle;
 
 	printf("Boot order - type letter to move device to top.\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
