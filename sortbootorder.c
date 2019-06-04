@@ -73,6 +73,7 @@ static u8 com2_available;
 static u8 ehci0_toggle;
 static u8 mpcie2_clk_toggle;
 static u8 boost_toggle;
+static u8 sd3_toggle;
 #endif
 
 static u8 uartc_toggle;
@@ -188,6 +189,10 @@ int main(void) {
 	token = strstr(bootorder_data, "boosten");
 	token += strlen("boosten");
 	boost_toggle = token ? strtoul(token, NULL, 10) : 0;
+
+	token = strstr(bootorder_data, "sd3mode");
+	token += strlen("sd3mode");
+	sd3_toggle = token ? strtoul(token, NULL, 10) : 0;
 #endif
 
 	token = strstr(bootorder_data, "uartc");
@@ -257,6 +262,10 @@ int main(void) {
 			case 'L':
 				boost_toggle ^= 0x1;
 				break;
+			case 'j':
+			case 'J':
+				sd3_toggle ^= 0x1;
+				break;
 			case 'Q':
 				handle_spi_lock_menu();
 				break;
@@ -277,6 +286,7 @@ int main(void) {
 				update_tag_value(bootlist, &max_lines, "mpcie2_clk", mpcie2_clk_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
 				update_tag_value(bootlist, &max_lines, "boosten", boost_toggle + '0');
+				update_tag_value(bootlist, &max_lines, "sd3mode", sd3_toggle + '0');
 #endif
 				save_flash(flash_address, bootlist, max_lines, spi_wp_toggle);
 				// fall through to exit ...
@@ -379,6 +389,7 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n", (mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  l Core Performance Boost - Currently %s\n", (boost_toggle) ? "Enabled" : "Disabled");
+	printf("  j SD 3.0 mode - Currently %s\n", (sd3_toggle) ? "Enabled" : "Disabled");
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
@@ -551,6 +562,11 @@ static void refresh_tag_values(u8 max_lines)
 		if(token) {
 			token += strlen("boosten");
 			boost_toggle = strtoul(token, NULL, 10);
+		}
+		token = strstr(&(bootlist_def[i][0]), "sd3mode");
+		if(token) {
+			token += strlen("sd3mode");
+			sd3_toggle = strtoul(token, NULL, 10);
 		}
 #endif
 	}
