@@ -278,6 +278,7 @@ int main(void) {
 				break;
 			case 'i':
 			case 'I':
+				; // empty statement to avoid compilation error
 				char *prompt = readline("Specify the watchdog"
 					" timeout in seconds (0 to disable): ");
 				wdg_timeout = (u16) strtoul(prompt, NULL, 10);
@@ -549,8 +550,8 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 	for (i = 0; i < *max_lines; i++) {
 		if (!strncmp(tag, &buffer[i][0], strlen(tag))) {
 			found = TRUE;
-			snprintf(buffer[i][strlen(tag)], 2, "%04x", value);
-			printf("%s, %02x\n", buffer[i][0],
+			snprintf(&buffer[i][strlen(tag)], 2, "%04x", value);
+			printf("%s, %02x\n", &buffer[i][0],
 				buffer[i][strlen(tag)+4]);
 			buffer[*max_lines][strlen(tag)+4] = '\r';
 			buffer[*max_lines][strlen(tag)+5] = '\n';
@@ -563,8 +564,8 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 			return;
 		}
 		strcpy(&buffer[*max_lines][0], tag);
-		snprintf(buffer[i][strlen(tag)], 2, "%04x", value);
-		printf("%s, %02x\n", buffer[*max_lines][0],
+		snprintf(&buffer[*max_lines][strlen(tag)], 2, "%04x", value);
+		printf("%s, %02x\n", &buffer[*max_lines][0],
 			buffer[*max_lines][strlen(tag)+4]);
 		buffer[*max_lines][strlen(tag)+4] = '\r';
 		buffer[*max_lines][strlen(tag)+5] = '\n';
