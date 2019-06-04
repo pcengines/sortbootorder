@@ -12,6 +12,7 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 - SD 3.0 mode runtime configuration
 - watchdog runtime configuration with configurable timeout
 - additional SPI flash lockdown hidden menu
+- basic support for Adesto chips
 
 ### Changed
 - all USB bootorder options have been unified and now affect all USB ports and
