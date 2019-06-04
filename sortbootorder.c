@@ -46,13 +46,22 @@
 #define RESET() outb(0x06, 0x0cf9)
 
 /*** prototypes ***/
-static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
-static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 max_lines );
-static void copy_list_line( char *src, char *dest );
-static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][MAX_LENGTH], u8 *line_count);
-static int get_line_number(u8 line_start, u8 line_end, char key );
-static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt );
-static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value);
+static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
+				  u8 line_cnt, u8 lineDef_cnt);
+static void move_boot_list(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line,
+			   u8 max_lines);
+static void copy_list_line(char *src, char *dest);
+static int fetch_file_from_cbfs(char *filename,
+				char destination[MAX_DEVICES][MAX_LENGTH],
+				u8 *line_count);
+static int get_line_number(u8 line_start, u8 line_end, char key);
+static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
+		    u8 lineDef_cnt );
+static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH],
+			     u8 *max_lines, const char * tag, char value);
+static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
+			       u8 *max_lines, u16 value);
+static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
 static void refresh_tag_values(u8 max_lines);
 
 /*** local variables ***/
@@ -74,6 +83,7 @@ static u8 ehci0_toggle;
 static u8 mpcie2_clk_toggle;
 static u8 boost_toggle;
 static u8 sd3_toggle;
+static u16 wdg_timeout;
 #endif
 
 static u8 uartc_toggle;
@@ -193,6 +203,10 @@ int main(void) {
 	token = strstr(bootorder_data, "sd3mode");
 	token += strlen("sd3mode");
 	sd3_toggle = token ? strtoul(token, NULL, 10) : 0;
+
+	token = strstr(bootorder_data, "watchdog");
+	token += strlen("watchdog");
+	wdg_timeout = token ? (u16) strtoul(token, NULL, 16) : 0;
 #endif
 
 	token = strstr(bootorder_data, "uartc");
@@ -262,6 +276,13 @@ int main(void) {
 			case 'L':
 				boost_toggle ^= 0x1;
 				break;
+			case 'i':
+			case 'I':
+				char *prompt = readline("Specify the watchdog"
+					" timeout in seconds (0 to disable): ");
+				wdg_timeout = (u16) strtoul(prompt, NULL, 10);
+				prompt[0] = '\0';
+				break;
 			case 'j':
 			case 'J':
 				sd3_toggle ^= 0x1;
@@ -275,19 +296,7 @@ int main(void) {
 #endif
 			case 's':
 			case 'S':
-				update_tag_value(bootlist, &max_lines, "pxen", ipxe_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "usben", usb_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "scon", console_toggle + '0');
-				if (com2_available)
-					update_tag_value(bootlist, &max_lines, "com2en", com2_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "uartc", uartc_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "uartd", uartd_toggle + '0');
-#ifndef TARGET_APU1
-				update_tag_value(bootlist, &max_lines, "mpcie2_clk", mpcie2_clk_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "ehcien", ehci0_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "boosten", boost_toggle + '0');
-				update_tag_value(bootlist, &max_lines, "sd3mode", sd3_toggle + '0');
-#endif
+				update_tags(bootlist, &max_lines);
 				save_flash(flash_address, bootlist, max_lines, spi_wp_toggle);
 				// fall through to exit ...
 			case 'x':
@@ -326,7 +335,8 @@ static int strcmp_printable_char(const char *s1, const char *s2)
 }
 
 /*******************************************************************************/
-static int get_line_number( u8 line_start, u8 line_end, char key ) {
+static int get_line_number(u8 line_start, u8 line_end, char key)
+{
 	int i;
 	for (i = line_end - 1; i >= line_start; i-- ) {
 		if(id[i] == key)
@@ -336,8 +346,9 @@ static int get_line_number( u8 line_start, u8 line_end, char key ) {
 }
 
 /*******************************************************************************/
-static void copy_list_line( char *src, char *dest ) {
-u8 i=0;
+static void copy_list_line(char *src, char *dest)
+{
+	u8 i=0;
 
 	do {
 		dest[i] = src[i];
@@ -346,7 +357,9 @@ u8 i=0;
 }
 
 /*******************************************************************************/
-static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt ) {
+static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
+				  u8 line_cnt, u8 lineDef_cnt )
+{
 	int i,j,y,unique;
 	char print_device[MAX_LENGTH];
 
@@ -378,27 +391,42 @@ static void show_boot_device_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line
 	}
 	printf("\n\n");
 	printf("  r Restore boot order defaults\n");
-	printf("  n Network/PXE boot - Currently %s\n", (ipxe_toggle) ? "Enabled" : "Disabled");
-	printf("  u USB boot - Currently %s\n", (usb_toggle) ? "Enabled" : "Disabled");
-	printf("  t Serial console - Currently %s\n", (console_toggle) ? "Enabled" : "Disabled");
+	printf("  n Network/PXE boot - Currently %s\n",
+		(ipxe_toggle) ? "Enabled" : "Disabled");
+	printf("  u USB boot - Currently %s\n",
+		(usb_toggle) ? "Enabled" : "Disabled");
+	printf("  t Serial console - Currently %s\n",
+		(console_toggle) ? "Enabled" : "Disabled");
 	if (com2_available)
-		printf("  k Redirect console output to COM2 - Currently %s\n", (com2_toggle) ? "Enabled" : "Disabled");
-	printf("  o UART C - Currently %s\n", (uartc_toggle) ? "Enabled" : "Disabled");
-	printf("  p UART D - Currently %s\n", (uartd_toggle) ? "Enabled" : "Disabled");
+		printf("  k Redirect console output to COM2 - Currently %s\n",
+			(com2_toggle) ? "Enabled" : "Disabled");
+	printf("  o UART C - Currently %s\n",
+		(uartc_toggle) ? "Enabled" : "Disabled");
+	printf("  p UART D - Currently %s\n",
+		(uartd_toggle) ? "Enabled" : "Disabled");
 #ifndef TARGET_APU1
-	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n", (mpcie2_clk_toggle) ? "Enabled" : "Disabled");
-	printf("  h EHCI0 controller - Currently %s\n", (ehci0_toggle) ? "Enabled" : "Disabled");
-	printf("  l Core Performance Boost - Currently %s\n", (boost_toggle) ? "Enabled" : "Disabled");
-	printf("  j SD 3.0 mode - Currently %s\n", (sd3_toggle) ? "Enabled" : "Disabled");
+	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n",
+		(mpcie2_clk_toggle) ? "Enabled" : "Disabled");
+	printf("  h EHCI0 controller - Currently %s\n",
+		(ehci0_toggle) ? "Enabled" : "Disabled");
+	printf("  l Core Performance Boost - Currently %s\n",
+		(boost_toggle) ? "Enabled" : "Disabled");
+	printf("  i Watchdog - Currently %s\n",
+		(wdg_timeout) ? "Enabled" : "Disabled");
+	printf("  j SD 3.0 mode - Currently %s\n",
+		(sd3_toggle) ? "Enabled" : "Disabled");
 #endif
-	printf("  w Enable BIOS write protect - Currently %s\n", (spi_wp_toggle) ? "Enabled" : "Disabled");
+	printf("  w Enable BIOS write protect - Currently %s\n",
+		(spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
 
 /*******************************************************************************/
-static void int_ids( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt, u8 lineDef_cnt ) {
-int i,y;
+static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
+		    u8 lineDef_cnt )
+{
+	int i,y;
 	for (i = 0; i < line_cnt; i++ ) {
 		if (buffer[i][0] == '/') {
 			for (y = 0; y < lineDef_cnt; y++) {
@@ -412,7 +440,10 @@ int i,y;
 }
 
 /*******************************************************************************/
-static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][MAX_LENGTH], u8 *line_count) {
+static int fetch_file_from_cbfs(char *filename,
+				char destination[MAX_DEVICES][MAX_LENGTH],
+				u8 *line_count)
+{
 	char *cbfs_dat, tmp;
 	int cbfs_offset = 0, char_cnt = 0;
 	size_t cbfs_length;
@@ -454,7 +485,9 @@ static int fetch_file_from_cbfs( char *filename, char destination[MAX_DEVICES][M
 }
 
 /*******************************************************************************/
-static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 max_lines ) {
+static void move_boot_list(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line,
+			   u8 max_lines )
+{
 	char temp_line[MAX_LENGTH];
 	char ln;
 	u8 x;
@@ -479,7 +512,8 @@ static void move_boot_list( char buffer[MAX_DEVICES][MAX_LENGTH], u8 line, u8 ma
 }
 
 /*******************************************************************************/
-static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines, const char * tag, char value)
+static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH],
+			     u8 *max_lines, const char * tag, char value)
 {
 	int i;
 	bool found = FALSE;
@@ -505,6 +539,60 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH], u8 *max_lines
 	}
 }
 
+static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
+				u8 *max_lines, u16 value)
+{
+	int i;
+	bool found = FALSE;
+	char *tag = "watchdog";
+
+	for (i = 0; i < *max_lines; i++) {
+		if (!strncmp(tag, &buffer[i][0], strlen(tag))) {
+			found = TRUE;
+			snprintf(buffer[i][strlen(tag)], 2, "%04x", value);
+			printf("%s, %02x\n", buffer[i][0],
+				buffer[i][strlen(tag)+4]);
+			buffer[*max_lines][strlen(tag)+4] = '\r';
+			buffer[*max_lines][strlen(tag)+5] = '\n';
+			break;
+		}
+	}
+
+	if (!found) {
+		if ((*max_lines + 1) > MAX_DEVICES) {
+			return;
+		}
+		strcpy(&buffer[*max_lines][0], tag);
+		snprintf(buffer[i][strlen(tag)], 2, "%04x", value);
+		printf("%s, %02x\n", buffer[*max_lines][0],
+			buffer[*max_lines][strlen(tag)+4]);
+		buffer[*max_lines][strlen(tag)+4] = '\r';
+		buffer[*max_lines][strlen(tag)+5] = '\n';
+		buffer[*max_lines][strlen(tag)+6] = '0';
+		(*max_lines)++;
+	}	
+}
+
+static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
+{
+	update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
+	update_tag_value(bootlist, max_lines, "usben",	usb_toggle + '0');
+	update_tag_value(bootlist, max_lines, "scon", console_toggle + '0');
+	if (com2_available) {
+		update_tag_value(bootlist, max_lines, "com2en",
+				 com2_toggle + '0');
+	}
+	update_tag_value(bootlist, max_lines, "uartc",	uartc_toggle + '0');
+	update_tag_value(bootlist, max_lines, "uartd", uartd_toggle + '0');
+#ifndef TARGET_APU1
+	update_tag_value(bootlist, max_lines, "mpcie2_clk",
+			 mpcie2_clk_toggle + '0');
+	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle + '0');
+	update_tag_value(bootlist, max_lines, "boosten", boost_toggle + '0');
+	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle + '0');
+	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
+#endif
+}
 /*******************************************************************************/
 static void refresh_tag_values(u8 max_lines)
 {
@@ -567,6 +655,12 @@ static void refresh_tag_values(u8 max_lines)
 		if(token) {
 			token += strlen("sd3mode");
 			sd3_toggle = strtoul(token, NULL, 10);
+		}
+
+		token = strstr(&(bootlist_def[i][0]), "watchdog");
+		if(token) {
+			token += strlen("watchdog");
+			wdg_timeout = (u16) strtoul(token, NULL, 16);
 		}
 #endif
 	}
