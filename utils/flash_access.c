@@ -19,6 +19,7 @@
 
 #include <spi/spi_flash.h>
 #include <flash_access.h>
+#include <spi/spi_flash_internal.h>
 
 #define FLASH_SIZE_CHUNK   0x1000 //4k
 
@@ -76,6 +77,19 @@ inline int prog_sec(u8 reg, u8 addr, const void *buf, size_t len)
 inline int lock_sec(u8 reg)
 {
 	return spi_flash_sec_lock(flash_device, reg);
+}
+
+inline int send_flash_cmd(u8 cmd, void *response, size_t len)
+{
+	return spi_flash_cmd(flash_device->spi, cmd, response, len);
+}
+
+inline int send_flash_cmd_write(u8 command, size_t cmd_len, const void *data,
+				size_t data_len)
+{
+	const u8 cmd = command;
+	return spi_flash_cmd_write(flash_device->spi, &cmd, cmd_len, data,
+				   data_len);
 }
 
 /*******************************************************************************/
