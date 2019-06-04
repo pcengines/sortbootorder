@@ -84,6 +84,12 @@ key.
   slot.
 * `h EHCI0 controller` - enables/disables EHCI0 controller (used in apu3)
 * `l Core Performance Boost` - enables/disables CPU boost.
+* `i Watchdog` - enables/disables hardware watchdog. Each time toggled, the
+  prompt will pop out asking to provide a timeout value in seconds (0 to
+  disable). **Set reasonably high value so it will be possible to disable the**
+  **watchdog later. Too low value may result in a reset loop!**
+* `j SD 3.0 mode` - enable SD controller in 3.0 mode to allow achieving full
+  speeds with UHS-I SD cards
 * `w Enable BIOS write protect` - enables/disables BIOS WP functionality. For
   details, see descritption in [BIOS WP option](#bios-wp-option).
 * `x Exit setup without save` - exits setup menu without saving the settings
@@ -98,22 +104,30 @@ one FLASH sector.
 
 Relevant content of this file may look like this:
 
-  ```
-  /pci@i0cf8/usb@10/usb-*@1
-  /pci@i0cf8/usb@10/usb-*@2
-  /pci@i0cf8/usb@10/usb-*@3
-  /pci@i0cf8/usb@10/usb-*@4
-  /pci@i0cf8/*@14,7
-  /pci@i0cf8/*@11/drive@0/disk@0
-  /pci@i0cf8/*@11/drive@1/disk@0
-  /pci@i0cf8/pci-bridge@2,5/*@0/drive@0/disk@0
-  /pci@i0cf8/pci-bridge@2,5/*@0/drive@1/disk@0
-  /rom@genroms/pxe.rom
-  pxen0
-  scon1
-  usben1
-  ...
-  ```
+```
+/pci@i0cf8/usb@10/usb-*@1
+/pci@i0cf8/usb@10/usb-*@2
+/pci@i0cf8/usb@10/usb-*@3
+/pci@i0cf8/usb@10/usb-*@4
+/pci@i0cf8/usb@12/usb-*@1
+/pci@i0cf8/usb@12/usb-*@2
+/pci@i0cf8/usb@12/usb-*@3
+/pci@i0cf8/usb@12/usb-*@4
+/pci@i0cf8/usb@13/usb-*@1
+/pci@i0cf8/usb@13/usb-*@2
+/pci@i0cf8/usb@13/usb-*@3
+/pci@i0cf8/usb@13/usb-*@4
+/pci@i0cf8/*@14,7
+/pci@i0cf8/*@11/drive@0/disk@0
+/pci@i0cf8/*@11/drive@1/disk@0
+/pci@i0cf8/pci-bridge@2,5/*@0/drive@0/disk@0
+/pci@i0cf8/pci-bridge@2,5/*@0/drive@1/disk@0
+/rom@genroms/pxe.rom
+pxen0
+scon1
+usben1
+...
+```
 
 Rest of this file is filled with characters to meet that 4096 bytes
 requirement.
@@ -155,6 +169,8 @@ file is used to match device letter and description with corresponding node from
   UART D - Enabled
   EHCI0 controller - Disabled
   Core Performance Boost - Enabled
+  Watchdog - Disabled
+  SD 3.0 mode - Disabled
   Redirect console output to COM2 - Disabled
   BIOS write protect - Disabled
   ```
@@ -195,6 +211,129 @@ serial written
 > r
 serial: 1234567890
 > q
+```
+
+### Hidden flash lockdown menu
+
+Experimental menu containing options to write and read serial number to
+security registers of the SPI flash chip. To enter press `Q` (`q + shift`)
+in the main menu. Option description:
+
+* `p` - prints all the protected ranges of SPI flash for CMP bit equal to 0,
+        all protected ranges have its corresponding number that is used in
+        other commands
+* `r` - prints all the protected ranges of SPI flash for CMP bit equal to 1,
+        all protected ranges have its corresponding number that is used in
+        other commands
+* `b {block_no}` - sets the desired protection range to enabled, takes the
+                   protection range number as parameters; for correct number,
+                   please refer to commands that print protected range statuses
+* `c` - clears the block protection by setting the protected range to
+        000000h - 000000h
+* `s` - shows the current status register protection, each protection type has
+        its corresponding number which is used in other commands;  due to the
+        design limitations the WP pin state detection works only if SRP0 bit in
+        status register is set
+* `l {lock_type}` - set the desired status register protection, takes the
+                    protection type number as a parameter; for the correct
+                    number please refer to the command that prints the status
+                    register protection status
+* `q` - return to main menu
+
+#### Example
+
+```
+> p
+ 1) Protected range 000000h – 000000h (currently enabled)
+ 2) Protected range 7E0000h – 7FFFFFh 
+ 3) Protected range 7C0000h – 7FFFFFh 
+ 4) Protected range 780000h – 7FFFFFh 
+ 5) Protected range 700000h – 7FFFFFh 
+ 6) Protected range 600000h – 7FFFFFh 
+ 7) Protected range 400000h – 7FFFFFh 
+ 8) Protected range  000000h – 01FFFFh 
+ 9) Protected range  000000h – 03FFFFh 
+10) Protected range  000000h – 07FFFFh 
+11) Protected range  000000h – 0FFFFFh 
+12) Protected range  000000h – 1FFFFFh 
+13) Protected range  000000h – 3FFFFFh 
+14) Protected range  000000h – 7FFFFFh 
+15) Protected range  7FF000h – 7FFFFFh 
+16) Protected range  7FE000h – 7FFFFFh 
+17) Protected range  7FC000h – 7FFFFFh 
+18) Protected range  7F8000h – 7FFFFFh 
+19) Protected range  000000h – 000FFFh 
+20) Protected range  000000h – 001FFFh 
+21) Protected range  000000h – 003FFFh 
+22) Protected range  000000h – 007FFFh 
+
+...
+> s
+SRP0=0 , SRP1=0, WP=?
+1) Status register is in Software Protected mode. WP pin may be active.
+2) Status register is NOT in Hardware Protected mode
+3) Status register is NOT in Hardware Unprotected mode
+4) Status register is NOT in Power Supply Lock-Down mode
+5) Status register is NOT in One Time Program mode
+
+...
+
+> b 5
+Setting block protection success!
+> p
+ 1) Protected range 000000h – 000000h 
+ 2) Protected range 7E0000h – 7FFFFFh 
+ 3) Protected range 7C0000h – 7FFFFFh 
+ 4) Protected range 780000h – 7FFFFFh 
+ 5) Protected range 700000h – 7FFFFFh (currently enabled)
+ 6) Protected range 600000h – 7FFFFFh 
+ 7) Protected range 400000h – 7FFFFFh 
+ 8) Protected range  000000h – 01FFFFh 
+ 9) Protected range  000000h – 03FFFFh 
+10) Protected range  000000h – 07FFFFh 
+11) Protected range  000000h – 0FFFFFh 
+12) Protected range  000000h – 1FFFFFh 
+13) Protected range  000000h – 3FFFFFh 
+14) Protected range  000000h – 7FFFFFh 
+15) Protected range  7FF000h – 7FFFFFh 
+16) Protected range  7FE000h – 7FFFFFh 
+17) Protected range  7FC000h – 7FFFFFh 
+18) Protected range  7F8000h – 7FFFFFh 
+19) Protected range  000000h – 000FFFh 
+20) Protected range  000000h – 001FFFh 
+21) Protected range  000000h – 003FFFh 
+22) Protected range  000000h – 007FFFh 
+
+...
+
+> l 4
+Setting status register protection success!
+
+> s
+SRP0=0 , SRP1=1, WP=?
+1) Status register is NOT in Software Protected mode.
+2) Status register is NOT in Hardware Protected mode
+3) Status register is NOT in Hardware Unprotected mode
+4) Status register is in Power Supply Lock-Down mode
+5) Status register is NOT in One Time Program mode
+```
+
+> For more verbose details about the protection modes and protection mechanisms
+> please refer to Winbond W25Q64FV datasheet. W25Q64FV is currently the only
+> supported chip by the hidden flash lockdown menu.
+
+Be aware of the One Time Program mode. it will permanently lock the status
+register. If You have left some block/range protection in place when locking,
+You will not be able to erase/program that part of SPI flash. That means
+**Your BIOS won't be upgraded anymore unless You solder a new unlocked chip.**
+Handle with care. But, if You choose to set the permanent lock, You will be additionally
+prompted for confirmation:
+
+```
+> l 5
+WARNING: You are going to permanently lock status register
+Are You sure? (y/n) n
+Aborting...
 ```
 
 ## Building
