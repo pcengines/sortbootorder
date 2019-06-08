@@ -67,8 +67,10 @@ static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
 		    u8 lineDef_cnt );
 static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH],
 			     u8 *max_lines, const char * tag, char value);
+#ifndef TARGET_APU1
 static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 			       u8 *max_lines, u16 value);
+#endif
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
 static void refresh_tag_values(u8 max_lines);
 
@@ -555,7 +557,7 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(*max_lines)++;
 	}
 }
-
+#ifndef TARGET_APU1
 static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 				u8 *max_lines, u16 value)
 {
@@ -585,6 +587,7 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(*max_lines)++;
 	}	
 }
+#endif
 
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 {
