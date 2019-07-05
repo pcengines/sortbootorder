@@ -7,6 +7,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.6.15] - 2019-07-05
+### Fixed
+- incorrect IF conditions in SPI lock menu
+
 ## [v4.6.14] - 2019-06-04
 ### Added
 - SD 3.0 mode runtime configuration
@@ -168,7 +172,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.14...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.15...master
+[v4.6.15]: https://github.com/pcengines/sortbootorder/compare/v4.6.14...v4.6.15
 [v4.6.14]: https://github.com/pcengines/sortbootorder/compare/v4.6.13...v4.6.14
 [v4.6.13]: https://github.com/pcengines/sortbootorder/compare/v4.6.12...v4.6.13
 [v4.6.12]: https://github.com/pcengines/sortbootorder/compare/v4.6.11...v4.6.12
