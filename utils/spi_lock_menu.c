@@ -397,7 +397,7 @@ static void set_block_protection(char* command)
 		return;
 	}
 
-	if (choice < 1 && choice > 44) {
+	if (choice < 1 || choice > 44) {
 		printf("Invalid lock option\n");
 		return;
 	}
@@ -493,7 +493,7 @@ static void set_sr_lock(char* command)
 		return;
 	}
 
-	if (choice < 1 && choice > 5) {
+	if (choice < 1 || choice > 5) {
 		printf("Invalid lock option\n");
 		return;
 	}
