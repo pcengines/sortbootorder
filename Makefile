@@ -95,7 +95,7 @@ endif
 real-all: version $(TARGET)
 
 version:
-	sed -e "s/@version@/\"$(VERSION)\"/" version.h.in > version.h
+	sed -e "s/@version@/\"$(word 2,$(subst /, ,$(VERSION)))\"/" version.h.in > version.h
 
 $(TARGET): $(OBJS) libpayload $(DIRS)
 	printf "    LPCC       $(subst $(CURDIR)/,,$(@)) (LINK)\n"
