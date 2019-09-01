@@ -62,6 +62,8 @@ static void copy_list_line(char *src, char *dest);
 static int fetch_file_from_cbfs(char *filename,
 				char destination[MAX_DEVICES][MAX_LENGTH],
 				u8 *line_count);
+static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
+			   u8 *line_count);
 static int get_line_number(u8 line_start, u8 line_end, char key);
 static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
 		    u8 lineDef_cnt );
@@ -73,24 +75,22 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 #endif
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
 static void refresh_tag_values(u8 max_lines);
+static char *get_vpd_tag(const char *name);
+static u8 is_tag_enabled(const char *name);
 
 /*** local variables ***/
 static int flash_address;
 
 static u8 ipxe_toggle;
 static u8 usb_toggle;
-
-static u8 spi_wp_toggle;
-
 static u8 console_toggle;
 static u8 com2_toggle;
-
-// apu5 does not have COM2
 static u8 com2_available;
+static u8 uartc_toggle;
+static u8 uartd_toggle;
 
 #ifndef TARGET_APU1
 static u8 ehci0_toggle;
-static u8 mpcie2_clk_toggle;
 static u8 boost_toggle;
 static u8 sd3_toggle;
 #ifndef COREBOOT_LEGACY
@@ -99,9 +99,12 @@ static u8 iommu_toggle;
 static u16 wdg_timeout;
 #endif
 
+<<<<<<< HEAD
 static u8 uartc_toggle;
 static u8 uartd_toggle;
 
+=======
+>>>>>>> sortbootorder.c: prepare to port runtime configuration to VPD
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
@@ -126,12 +129,6 @@ int main(void) {
 	u8 bootlist_map_ln = 0;
 	u8 line_start = 0;
 	u8 line_number = 0;
-	char *token;
-	char *bootorder_data;
-	size_t cbfs_length;
-#ifndef COREBOOT_LEGACY
-	struct cbfs_handle *bootorder_handle;
-#endif
 
 	lib_get_sysinfo();
 
@@ -158,50 +155,32 @@ int main(void) {
 		RESET();
 	}
 
-	// Find out where the bootorder file is in rom
-#ifndef COREBOOT_LEGACY
-	bootorder_handle = cbfs_get_handle( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE );
-	flash_address = bootorder_handle->media_offset + bootorder_handle->content_offset;
-	if ((u32)flash_address & 0xfff)
-		printf("Warning: The bootorder file is not 4k aligned!\n");
-#else
-	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
-	flash_address = (int)tmp;
-	if ((u32)tmp & 0xfff)
-		printf("Warning: The bootorder file is not 4k aligned!\n");
-#endif
 
-
-	bootorder_data = (char *) cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, &cbfs_length );
+	lib_get_sysinfo();
 
 	// Get required files from CBFS
-	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
+	fetch_bootorder(bootlist, &max_lines);
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
 	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
 
+	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
+	int_ids( bootlist, max_lines, bootlist_def_ln );
+
 	// Init ipxe and serial status
-	token = strstr(bootorder_data, "pxen");
-	token += strlen("pxen");
-	ipxe_toggle = token ? strtoul(token, NULL, 10) : 1;
 
-	token = strstr(bootorder_data, "usben");
-	token += strlen("usben");
-	usb_toggle = token ? strtoul(token, NULL, 10) : 1;
-
-	token = strstr(bootorder_data, "scon");
-	token += strlen("scon");
-	console_toggle = token ? strtoul(token, NULL, 10) : 1;
-
-	token = strstr(bootorder_data, "com2en");
-	if (token == NULL)
+	ipxe_toggle	= is_tag_enabled("pxen");
+	usb_toggle	= is_tag_enabled("usben");
+	console_toggle	= is_tag_enabled("scon");
+	com2_toggle	= is_tag_enabled("com2en");
+	uartc_toggle =  is_tag_enabled("uartc");
+	uartd_toggle =  is_tag_enabled("uartd");
+	if(get_vpd_tag("com2en") == NULL)
 		com2_available = 0;
-	else {
+	else
 		com2_available = 1;
-		token += strlen("com2en");
-		com2_toggle = token ? strtoul(token, NULL, 10) : 1;
-	}
-
+	
 #ifndef TARGET_APU1
+<<<<<<< HEAD
 	token = strstr(bootorder_data, "ehcien");
 	token += strlen("ehcien");
 	ehci0_toggle = token ? strtoul(token, NULL, 10) : 1;
@@ -225,17 +204,13 @@ int main(void) {
 	token = strstr(bootorder_data, "watchdog");
 	token += strlen("watchdog");
 	wdg_timeout = token ? (u16) strtoul(token, NULL, 16) : 0;
+=======
+	ehci0_toggle	= is_tag_enabled("ehcien");
+	boost_toggle	= is_tag_enabled("boosten");
+	sd3_toggle	= is_tag_enabled("sd3mode");
+	wdg_timeout = (u16) strtoul(get_vpd_tag("watchdog"), NULL, 10);
+>>>>>>> sortbootorder.c: prepare to port runtime configuration to VPD
 #endif
-
-	token = strstr(bootorder_data, "uartc");
-	token += strlen("uartc");
-	uartc_toggle = token ? strtoul(token, NULL, 10) : 0;
-
-	token = strstr(bootorder_data, "uartd");
-	token += strlen("uartd");
-	uartd_toggle = token ? strtoul(token, NULL, 10) : 0;
-
-	spi_wp_toggle = is_flash_locked();
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
 	int_ids( bootlist, max_lines, bootlist_def_ln );
@@ -260,10 +235,6 @@ int main(void) {
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
-			case 'w':
-			case 'W':
-				spi_wp_toggle ^= 0x1;
-				break;
 			case 'k':
 			case 'K':
 				if (com2_available)
@@ -282,10 +253,6 @@ int main(void) {
 				uartd_toggle ^= 0x1;
 				break;
 #ifndef TARGET_APU1
-			case 'm':
-			case 'M':
-				mpcie2_clk_toggle ^= 0x1;
-				break;
 			case 'h':
 			case 'H':
 				ehci0_toggle ^= 0x1;
@@ -322,7 +289,7 @@ int main(void) {
 			case 's':
 			case 'S':
 				update_tags(bootlist, &max_lines);
-				save_flash(flash_address, bootlist, max_lines, spi_wp_toggle);
+				save_flash(flash_address, bootlist, max_lines);
 				// fall through to exit ...
 			case 'x':
 			case 'X':
@@ -387,20 +354,21 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 {
 	int i,j,y,unique;
 	char print_device[MAX_LENGTH];
+	u8 usb_status = is_tag_enabled("usben");
 
 	device_toggle[USB_1]  = usb_toggle;
-	device_toggle[USB_2]  = usb_toggle;
-	device_toggle[USB_3]  = usb_toggle;
-	device_toggle[USB_4]  = usb_toggle;
-	device_toggle[USB_5]  = usb_toggle;
-	device_toggle[USB_6]  = usb_toggle;
-	device_toggle[USB_7]  = usb_toggle;
-	device_toggle[USB_8]  = usb_toggle;
-	device_toggle[USB_9]  = usb_toggle;
-	device_toggle[USB_10] = usb_toggle;
-	device_toggle[USB_11] = usb_toggle;
-	device_toggle[USB_12] = usb_toggle;
-	device_toggle[IPXE]   = ipxe_toggle;
+	device_toggle[USB_2]  = status;
+	device_toggle[USB_3]  = status;
+	device_toggle[USB_4]  = status;
+	device_toggle[USB_5]  = status;
+	device_toggle[USB_6]  = status;
+	device_toggle[USB_7]  = status;
+	device_toggle[USB_8]  = status;
+	device_toggle[USB_9]  = status;
+	device_toggle[USB_10] = status;
+	device_toggle[USB_11] = status;
+	device_toggle[USB_12] = status;
+	device_toggle[IPXE]   = is_tag_enabled("pxen");
 
 	printf("Boot order - type letter to move device to top.\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
@@ -521,6 +489,90 @@ static int fetch_file_from_cbfs(char *filename,
 	return 0;
 }
 
+static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
+			   u8 *line_count)
+{
+	char tmp;
+	int offset = 0, char_cnt = 0;
+	u32 bootorder_offset, bootorder_size;
+	struct cbfs_media default_media;
+	struct cbfs_media *media = &default_media;
+	char *bootorder_dat;
+
+	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
+
+	int rc = fmap_region_by_name("BOOTORDER", &bootorder_offset,
+				     &bootorder_size);
+	if (rc == -1) {
+		printf("Error: BOOTORDER not found!\n");
+		return 1;
+	}
+
+	flash_address = (void *)(rom_begin + bootorder_offset);
+	if ((u32)flash_address & 0xfff)
+		printf("Warning: The bootorder file is not 4k aligned!\n");
+
+
+	bootorder_dat = (char *)malloc(bootorder_size);
+
+	if(!bootorder_dat)
+		return -1;
+
+	if (init_default_cbfs_media(media) != 0) {
+		free(bootorder_dat);
+		return -1;
+	}
+
+	media->open(media);
+
+	if (!media->read(media, bootorder_dat, bootorder_offset,
+			 bootorder_size)) {
+		free(bootorder_dat);
+		return -1;
+	}
+
+	media->close(media);
+
+	tmp = *(bootorder_dat);
+	if (tmp == 0xFF) {
+		printf("Error: bootorder is empty!\n");
+		free(bootorder_dat);
+		return -1;
+	}
+
+	//count up the lines and display
+	*line_count = 0;
+	while (1) {
+		tmp = *(bootorder_dat + offset++);
+		destination[*line_count][char_cnt] = tmp;
+		if (tmp == NEWLINE) {
+			(*line_count)++;
+			char_cnt = 0;
+		}
+		else if ((tmp == 0xFF) || (tmp == NUL) ||
+			 (offset > bootorder_size))
+			break;
+		else
+			char_cnt++;
+
+		if (*line_count > MAX_DEVICES) {
+			printf("aborting due to excessive line_count\n");
+			break;
+		}
+		if (char_cnt > MAX_LENGTH) {
+			printf("aborting due to excessive char count\n");
+			break;
+		}
+		if (offset > (MAX_LENGTH*MAX_DEVICES)) {
+			printf("aborting due to excessive cbfs ptr length\n");
+			break;
+		}
+	}
+	free(bootorder_dat);
+	return 0;
+}
+
+
 /*******************************************************************************/
 static void move_boot_list(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line,
 			   u8 max_lines )
@@ -609,16 +661,16 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 {
-	update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
-	update_tag_value(bootlist, max_lines, "usben",	usb_toggle + '0');
-	update_tag_value(bootlist, max_lines, "scon", console_toggle + '0');
-	if (com2_available) {
-		update_tag_value(bootlist, max_lines, "com2en",
-				 com2_toggle + '0');
+	update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle);
+	update_tag_value(bootlist, max_lines, "usben",	usb_toggle);
+	update_tag_value(bootlist, max_lines, "scon", console_toggle);
+	if (get_vpd_tag("com2en")) {
+		update_tag_value(bootlist, max_lines, "com2en", com2_toggle);
 	}
-	update_tag_value(bootlist, max_lines, "uartc",	uartc_toggle + '0');
-	update_tag_value(bootlist, max_lines, "uartd", uartd_toggle + '0');
+	update_tag_value(bootlist, max_lines, "uartc",	uartc_toggle);
+	update_tag_value(bootlist, max_lines, "uartd", uartd_toggle);
 #ifndef TARGET_APU1
+<<<<<<< HEAD
 	update_tag_value(bootlist, max_lines, "mpcie2_clk",
 			 mpcie2_clk_toggle + '0');
 	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle + '0');
@@ -627,6 +679,11 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 #ifndef COREBOOT_LEGACY
 	update_tag_value(bootlist, max_lines, "iommu", iommu_toggle + '0');
 #endif
+=======
+	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle;
+	update_tag_value(bootlist, max_lines, "boosten", boost_toggle);
+	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle);
+>>>>>>> sortbootorder.c: prepare to port runtime configuration to VPD
 	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
 #endif
 }
@@ -707,4 +764,36 @@ static void refresh_tag_values(u8 max_lines)
 		}
 #endif
 	}
+}
+
+static char *get_vpd_tag(const char *name)
+{
+	int tag_size = 10;
+	char vpd_tag[tag_size];
+	if (!vpd_gets(name, vpd_tag, tag_size, VPD_RW)) {
+		if(!vpd_gets(name, vpd_tag, tag_size, VPD_RO))
+			return NULL;
+	}
+
+	if (!memcmp(vpd_tag, "enabled", strlen("enabled")))
+		return "enabled";
+	else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
+		return "disabled";
+	else if (!strcmp(name, "watchdog")) {
+		return vpd_tag;
+	}
+	else
+		return NULL;
+}
+
+
+
+static u8 is_tag_enabled(const char *name)
+{
+	if (!memcmp(get_vpd_tag(name), "enabled", strlen("enabled")))
+		return 1;
+	else if (!memcmp(get_vpd_tag(name), "disabled", strlen("disabled")))
+		return 0;
+	else
+		return 0;
 }

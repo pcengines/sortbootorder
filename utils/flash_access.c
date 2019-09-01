@@ -94,7 +94,7 @@ inline int send_flash_cmd_write(u8 command, size_t cmd_len, const void *data,
 
 /*******************************************************************************/
 void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
-	        u8 max_lines, u8 spi_wp_toggle) {
+	        u8 max_lines) {
 	int i = 0;
 	int k = 0;
 	int j, ret;
@@ -110,15 +110,6 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 		}
 	}
 	cbfs_formatted_list[i++] = NUL;
-
-	// try to unlock the flash if it is locked
-	if (spi_flash_is_locked(flash_device)) {
-		spi_flash_unlock(flash_device);
-		if (spi_flash_is_locked(flash_device)) {
-			printf("Flash is write protected. Exiting...\n");
-			return;
-		}
-	}
 
 	printf("Erasing Flash size 0x%x @ 0x%x\n",
 	       FLASH_SIZE_CHUNK, flash_address);
@@ -147,13 +138,6 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 		printf("Write failed, ret: %d\n", ret);
 		return;
 	}
-
-	if (spi_wp_toggle) {
-		printf("Enabling flash write protect...\n");
-		spi_flash_lock(flash_device);
-	}
-
-	spi_wp_toggle = spi_flash_is_locked(flash_device);
 
 	printf("Done\n");
 }
