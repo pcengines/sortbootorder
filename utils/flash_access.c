@@ -111,16 +111,18 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 	}
 	cbfs_formatted_list[i++] = NUL;
 
-	printf("Erasing Flash size 0x%x @ 0x%x\n",
-	       FLASH_SIZE_CHUNK, flash_address);
+	if (is_flash_locked())
+		printf("WARNING: SPI flash lock is enabled."
+			" Saving configuration may fail.\n");
+
+	printf("Updating...\n",);
+
 	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
 	if (ret) {
 		printf("Erase failed, ret: %d\n", ret);
 		return;
 	}
 
-	printf("Writing %d bytes @ 0x%x\n", i, flash_address);
-	// write first 512 bytes
 	for (nvram_pos = 0; nvram_pos < (i & 0xFFFC); nvram_pos += 4) {
 		ret = spi_flash_write(flash_device, nvram_pos + flash_address,
 				      sizeof(u32),
