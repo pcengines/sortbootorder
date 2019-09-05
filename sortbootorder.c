@@ -75,7 +75,7 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 #endif
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
 static void refresh_tag_values(void);
-static char *get_vpd_tag(const char *name), enum vpd_region vpd_reg);
+static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
 static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt);
 
 /*** local variables ***/
@@ -172,8 +172,9 @@ int main(void) {
 	ehci0_toggle	= is_tag_enabled("ehcien", VPD_ANY, 0);
 	boost_toggle	= is_tag_enabled("boosten", VPD_ANY, 1);
 	sd3_toggle	= is_tag_enabled("sd3mode", VPD_ANY, 0);
-	wdg_timeout	= (u16) strtoul(get_vpd_tag("watchdog", VPD_ANY),
-					NULL, 10);
+	int wdg_size;
+	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_RO),
+				    NULL, 10);
 #endif
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
@@ -638,7 +639,9 @@ static void refresh_tag_values()
 	ehci0_toggle = is_tag_enabled("ehcien", VPD_RO, 0);
 	boost_toggle = is_tag_enabled("boosten", VPD_RO, 1);
 	sd3_toggle = is_tag_enabled("sd3mode", VPD_RO, 1);
-	wdg_timeout = (u16) strtoul(get_vpd_tag("watchdog", VPD_RO), NULL, 10);
+	int wdg_size;
+	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_RO),
+				    NULL, 10);
 #endif
 }
 
@@ -647,7 +650,7 @@ static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg)
 	int tag_size = 10;
 	char vpd_tag[tag_size];
 
-	if(vpd_eg = VPD_ANY) {
+	if(vpd_reg == VPD_ANY) {
 		if (!vpd_gets(name, vpd_tag, tag_size, VPD_RW)) {
 			if(!vpd_gets(name, vpd_tag, tag_size, VPD_RO))
 				return NULL;
@@ -661,8 +664,6 @@ static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg)
 		return "enabled";
 	else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
 		return "disabled";
-	else if (!strcmp(name, "watchdog"))
-		return vpd_tag;
 	else
 		return NULL;
 }
