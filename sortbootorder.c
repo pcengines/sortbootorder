@@ -74,9 +74,9 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 			       u8 *max_lines, u16 value);
 #endif
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
-static void refresh_tag_values(u8 max_lines);
-static char *get_vpd_tag(const char *name);
-static u8 is_tag_enabled(const char *name);
+static void refresh_tag_values(void);
+static char *get_vpd_tag(const char *name), enum vpd_region vpd_reg);
+static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt);
 
 /*** local variables ***/
 static int flash_address;
@@ -149,30 +149,31 @@ int main(void) {
 
 	// Get required files from CBFS
 	fetch_bootorder(bootlist, &max_lines);
-	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
-	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
+	fetch_file_from_cbfs(BOOTORDER_DEF, bootlist_def, &bootlist_def_ln);
+	fetch_file_from_cbfs(BOOTORDER_MAP, bootlist_map, &bootlist_map_ln);
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
 	int_ids( bootlist, max_lines, bootlist_def_ln );
 
 	// Init ipxe and serial status
 
-	ipxe_toggle	= is_tag_enabled("pxen");
-	usb_toggle	= is_tag_enabled("usben");
-	console_toggle	= is_tag_enabled("scon");
-	com2_toggle	= is_tag_enabled("com2en");
-	uartc_toggle	= is_tag_enabled("uartc");
-	uartd_toggle	= is_tag_enabled("uartd");
-	if(get_vpd_tag("com2en") == NULL)
+	ipxe_toggle	= is_tag_enabled("pxen", VPD_ANY, 0);
+	usb_toggle	= is_tag_enabled("usben", VPD_ANY, 1);
+	console_toggle	= is_tag_enabled("scon", VPD_ANY, 1);
+	com2_toggle	= is_tag_enabled("com2en", VPD_ANY, 0);
+	uartc_toggle	= is_tag_enabled("uartc", VPD_ANY, 0);
+	uartd_toggle	= is_tag_enabled("uartd", VPD_ANY, 0);
+	if(get_vpd_tag("com2en", VPD_ANY) == NULL)
 		com2_available = 0;
 	else
 		com2_available = 1;
 	
 #ifndef TARGET_APU1
-	ehci0_toggle	= is_tag_enabled("ehcien");
-	boost_toggle	= is_tag_enabled("boosten");
-	sd3_toggle	= is_tag_enabled("sd3mode");
-	wdg_timeout	= (u16) strtoul(get_vpd_tag("watchdog"), NULL, 10);
+	ehci0_toggle	= is_tag_enabled("ehcien", VPD_ANY, 0);
+	boost_toggle	= is_tag_enabled("boosten", VPD_ANY, 1);
+	sd3_toggle	= is_tag_enabled("sd3mode", VPD_ANY, 0);
+	wdg_timeout	= (u16) strtoul(get_vpd_tag("watchdog", VPD_ANY),
+					NULL, 10);
 #endif
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
@@ -188,7 +189,7 @@ int main(void) {
 				for (i = 0; i < max_lines && i < bootlist_def_ln; i++ )
 					copy_list_line(&(bootlist_def[i][0]), &(bootlist[i][0]));
 				int_ids( bootlist, max_lines, bootlist_def_ln);
-				refresh_tag_values(bootlist_def_ln);
+				refresh_tag_values();
 				break;
 			case 'n':
 			case 'N':
@@ -311,21 +312,20 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 {
 	int i,j,y,unique;
 	char print_device[MAX_LENGTH];
-	u8 usb_status = is_tag_enabled("usben");
 
-	device_toggle[USB_1]  = usb_status;
-	device_toggle[USB_2]  = usb_status;
-	device_toggle[USB_3]  = usb_status;
-	device_toggle[USB_4]  = usb_status;
-	device_toggle[USB_5]  = usb_status;
-	device_toggle[USB_6]  = usb_status;
-	device_toggle[USB_7]  = usb_status;
-	device_toggle[USB_8]  = usb_status;
-	device_toggle[USB_9]  = usb_status;
-	device_toggle[USB_10] = usb_status;
-	device_toggle[USB_11] = usb_status;
-	device_toggle[USB_12] = usb_status;
-	device_toggle[IPXE]   = is_tag_enabled("pxen");
+	device_toggle[USB_1]  = usb_toggle;
+	device_toggle[USB_2]  = usb_toggle;
+	device_toggle[USB_3]  = usb_toggle;
+	device_toggle[USB_4]  = usb_toggle;
+	device_toggle[USB_5]  = usb_toggle;
+	device_toggle[USB_6]  = usb_toggle;
+	device_toggle[USB_7]  = usb_toggle;
+	device_toggle[USB_8]  = usb_toggle;
+	device_toggle[USB_9]  = usb_toggle;
+	device_toggle[USB_10] = usb_toggle;
+	device_toggle[USB_11] = usb_toggle;
+	device_toggle[USB_12] = usb_toggle;
+	device_toggle[IPXE]   = ipxe_toggle;
 
 	printf("Boot order - type letter to move device to top.\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
@@ -626,106 +626,54 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 #endif
 }
 /*******************************************************************************/
-static void refresh_tag_values(u8 max_lines)
+static void refresh_tag_values()
 {
-	int i;
-	char *token;
-
-	for ( i = 0; i < max_lines; i++) {
-		token = strstr(&(bootlist_def[i][0]), "pxen");
-		if(token) {
-			token += strlen("pxen");
-			ipxe_toggle = strtoul(token, NULL, 10);
-	  	}
-
-		token = strstr(&(bootlist_def[i][0]), "usben");
-		if(token) {
-			token += strlen("usben");
-			usb_toggle = strtoul(token, NULL, 10);
-		}
-
-		token = strstr(&(bootlist_def[i][0]), "scon");
-		if(token) {
-			token += strlen("scon");
-			console_toggle = strtoul(token, NULL, 10);
-		}
-		token = strstr(&(bootlist_def[i][0]), "com2en");
-		if(token && com2_available) {
-			token += strlen("com2en");
-			com2_toggle = strtoul(token, NULL, 10);
-		}
-
-		token = strstr(&(bootlist_def[i][0]), "uartc");
-		if(token) {
-			token += strlen("uartc");
-			uartc_toggle = strtoul(token, NULL, 10);
-		}
-
-		token = strstr(&(bootlist_def[i][0]), "uartd");
-		if(token) {
-			token += strlen("uartd");
-			uartd_toggle = strtoul(token, NULL, 10);
-		}
-
+	ipxe_toggle = is_tag_enabled("pxen", VPD_RO, 0);
+	usb_toggle = is_tag_enabled("usben", VPD_RO, 1);
+	console_toggle = is_tag_enabled("scon", VPD_RO, 1);
+	uartc_toggle = is_tag_enabled("uartc", VPD_RO, 0);
+	uartd_toggle = is_tag_enabled("uartd", VPD_RO, 0);
+	com2_toggle = is_tag_enabled("com2en", VPD_RO, 0);
 #ifndef TARGET_APU1
-		token = strstr(&(bootlist_def[i][0]), "ehcien");
-		if(token) {
-			token += strlen("ehcien");
-			ehci0_toggle = strtoul(token, NULL, 10);
-		}
-		token = strstr(&(bootlist_def[i][0]), "mpcie2_clk");
-		if(token) {
-			token += strlen("mpcie2_clk");
-			mpcie2_clk_toggle = strtoul(token, NULL, 10);
-		}
-		token = strstr(&(bootlist_def[i][0]), "boosten");
-		if(token) {
-			token += strlen("boosten");
-			boost_toggle = strtoul(token, NULL, 10);
-		}
-		token = strstr(&(bootlist_def[i][0]), "sd3mode");
-		if(token) {
-			token += strlen("sd3mode");
-			sd3_toggle = strtoul(token, NULL, 10);
-		}
-
-		token = strstr(&(bootlist_def[i][0]), "watchdog");
-		if(token) {
-			token += strlen("watchdog");
-			wdg_timeout = (u16) strtoul(token, NULL, 16);
-		}
+	ehci0_toggle = is_tag_enabled("ehcien", VPD_RO, 0);
+	boost_toggle = is_tag_enabled("boosten", VPD_RO, 1);
+	sd3_toggle = is_tag_enabled("sd3mode", VPD_RO, 1);
+	wdg_timeout = (u16) strtoul(get_vpd_tag("watchdog", VPD_RO), NULL, 10);
 #endif
-	}
 }
 
-static char *get_vpd_tag(const char *name)
+static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg)
 {
 	int tag_size = 10;
 	char vpd_tag[tag_size];
-	if (!vpd_gets(name, vpd_tag, tag_size, VPD_RW)) {
-		if(!vpd_gets(name, vpd_tag, tag_size, VPD_RO))
-			return NULL;
+
+	if(vpd_eg = VPD_ANY) {
+		if (!vpd_gets(name, vpd_tag, tag_size, VPD_RW)) {
+			if(!vpd_gets(name, vpd_tag, tag_size, VPD_RO))
+				return NULL;
+		}
+	} else {
+		vpd_gets(name, vpd_tag, tag_size, vpd_reg);
 	}
+
 
 	if (!memcmp(vpd_tag, "enabled", strlen("enabled")))
 		return "enabled";
 	else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
 		return "disabled";
-	else if (!strcmp(name, "watchdog")) {
+	else if (!strcmp(name, "watchdog"))
 		return vpd_tag;
-	}
 	else
 		return NULL;
 }
 
-
-
-static u8 is_tag_enabled(const char *name)
+static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt)
 {
-	if (!memcmp(get_vpd_tag(name), "enabled", strlen("enabled")))
+	if (!memcmp(get_vpd_tag(name, vpd_reg), "enabled", strlen("enabled")))
 		return 1;
-	else if (!memcmp(get_vpd_tag(name), "disabled", strlen("disabled")))
+	else if (!memcmp(get_vpd_tag(name, vpd_reg), "disabled",
+		 strlen("disabled")))
 		return 0;
 	else
-		return 0;
+		return dflt;
 }
