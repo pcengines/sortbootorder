@@ -115,7 +115,7 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 		printf("WARNING: SPI flash lock is enabled."
 			" Saving configuration may fail.\n");
 
-	printf("Updating...\n",);
+	printf("Updating...\n");
 
 	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
 	if (ret) {
