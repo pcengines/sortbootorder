@@ -35,7 +35,7 @@ void initContainer(struct PairContainer *container) {
  * it.
  */
 struct StringPair *findString(struct PairContainer *container,
-                              const uint8_t *key,
+                              const u8 *key,
                               struct StringPair ***prev_next) {
   struct StringPair *current;
 
@@ -56,8 +56,8 @@ struct StringPair *findString(struct PairContainer *container,
 
 /* Just a helper function for setString() */
 static void fillStringPair(struct StringPair *pair,
-                           const uint8_t *key,
-                           const uint8_t *value,
+                           const u8 *key,
+                           const u8 *value,
                            const int pad_len) {
   pair->key = malloc(strlen((char*)key) + 1);
   assert(pair->key);
@@ -71,8 +71,8 @@ static void fillStringPair(struct StringPair *pair,
  * If not existed, creates new entry in container.
  */
 void setString(struct PairContainer *container,
-               const uint8_t *key,
-               const uint8_t *value,
+               const u8 *key,
+               const u8 *value,
                const int pad_len) {
   struct StringPair *found;
 
@@ -105,7 +105,7 @@ void setString(struct PairContainer *container,
  * Returns VPD_OK if deleted successfully. Otherwise, VPD_FAIL.
  */
 vpd_err_t deleteKey(struct PairContainer *container,
-                    const uint8_t *key) {
+                    const u8 *key) {
   struct StringPair *found, **prev_next;
 
   found = findString(container, key, &prev_next);
@@ -169,7 +169,7 @@ int subtractContainer(struct PairContainer *dst,
 
 vpd_err_t encodeContainer(const struct PairContainer *container,
                           const int max_buf_len,
-                          uint8_t *buf,
+                          u8 *buf,
                           int *generated) {
   struct StringPair *current;
 
@@ -186,14 +186,14 @@ vpd_err_t encodeContainer(const struct PairContainer *container,
   return VPD_OK;
 }
 
-static int callbackDecodeToContainer(const uint8_t *key,
-                                           uint32_t key_len,
-                                           const uint8_t *value,
-                                           uint32_t value_len,
+static int callbackDecodeToContainer(const u8 *key,
+                                           u32 key_len,
+                                           const u8 *value,
+                                           u32 value_len,
                                            void *arg) {
   struct PairContainer *container = (struct PairContainer*)arg;
-  uint8_t *key_string = (uint8_t*)malloc(key_len + 1),
-          *value_string = (uint8_t*)malloc(value_len + 1);
+  u8 *key_string = (u8*)malloc(key_len + 1),
+          *value_string = (u8*)malloc(value_len + 1);
   assert(key_string && value_string);
   memcpy(key_string, key, key_len);
   memcpy(value_string, value, value_len);
@@ -204,15 +204,15 @@ static int callbackDecodeToContainer(const uint8_t *key,
 }
 
 vpd_err_t decodeToContainer(struct PairContainer *container,
-                            const uint32_t max_len,
-                            const uint8_t *input_buf,
-                            uint32_t *consumed) {
+                            const u32 max_len,
+                            const u8 *input_buf,
+                            u32 *consumed) {
   return decodeVpdString(max_len, input_buf, consumed,
                          callbackDecodeToContainer, (void*)container);
 }
 
 vpd_err_t setContainerFilter(struct PairContainer *container,
-                             const uint8_t *filter) {
+                             const u8 *filter) {
   struct StringPair *str;
 
   for (str = container->first; str; str = str->next) {
@@ -241,7 +241,7 @@ vpd_err_t setContainerFilter(struct PairContainer *container,
 static vpd_err_t _appendToBuf(const void *buf_to_append,
                               int len,
                               const int max_buf_len,
-                              uint8_t *buf,
+                              u8 *buf,
                               int *generated) {
   if (*generated + len > max_buf_len) return VPD_ERR_OVERFLOW;
   memcpy(&buf[*generated], buf_to_append, len);
@@ -263,7 +263,7 @@ static int _getStringPairValueLen(const struct StringPair *str) {
 /* A helper function to export an instance of StringPair to the given buffer. */
 static vpd_err_t _exportStringPairKeyValue(const struct StringPair *str,
                                            const int max_buf_len,
-                                           uint8_t *buf,
+                                           u8 *buf,
                                            int *generated) {
   const void *strs[5] = {"\"", str->key, "\"=\"", str->value, "\"\n"};
   const int lens[5] = {
@@ -289,7 +289,7 @@ static vpd_err_t _exportStringPairKeyValue(const struct StringPair *str,
  */
 static vpd_err_t _appendToBufWithShellEscape(const char *str_to_export,
                                              const int max_buf_len,
-                                             uint8_t *buf,
+                                             u8 *buf,
                                              int *generated) {
   int len = strlen(str_to_export);
   int i;
@@ -313,7 +313,7 @@ static vpd_err_t _appendToBufWithShellEscape(const char *str_to_export,
  */
 static vpd_err_t _exportStringPairAsParameter(const struct StringPair *str,
                                               const int max_buf_len,
-                                              uint8_t *buf,
+                                              u8 *buf,
                                               int *generated) {
   int retval;
 
@@ -351,7 +351,7 @@ static vpd_err_t _exportStringPairAsParameter(const struct StringPair *str,
  */
 static vpd_err_t _exportStringPairNullTerminate(const struct StringPair *str,
                                                 const int max_buf_len,
-                                                uint8_t *buf,
+                                                u8 *buf,
                                                 int *generated) {
   int retval;
 
@@ -376,7 +376,7 @@ static vpd_err_t _exportStringPairNullTerminate(const struct StringPair *str,
 /* Export the value field of the instance of StringPair. */
 vpd_err_t exportStringValue(const struct StringPair *str,
                             const int max_buf_len,
-                            uint8_t *buf,
+                            u8 *buf,
                             int *generated) {
   assert(generated);
 
@@ -389,7 +389,7 @@ vpd_err_t exportStringValue(const struct StringPair *str,
 vpd_err_t exportContainer(const int export_type,
                           const struct PairContainer *container,
                           const int max_buf_len,
-                          uint8_t *buf,
+                          u8 *buf,
                           int *generated) {
   struct StringPair *str;
   int index;

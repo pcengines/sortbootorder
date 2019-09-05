@@ -11,13 +11,6 @@
  * Enable kernel types for user land utility.
  * Remove these for kernel or firmware targets.
  */
-#include <linux/types.h>
-typedef __u8 u8;
-typedef __u32 u32;
-typedef __u64 u64;
-typedef __s8 s8;
-typedef __s32 s32;
-typedef __s64 s64;
 
 enum {
 	VPD_DECODE_OK = 0,
