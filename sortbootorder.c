@@ -99,12 +99,6 @@ static u8 iommu_toggle;
 static u16 wdg_timeout;
 #endif
 
-<<<<<<< HEAD
-static u8 uartc_toggle;
-static u8 uartd_toggle;
-
-=======
->>>>>>> sortbootorder.c: prepare to port runtime configuration to VPD
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
@@ -172,15 +166,14 @@ int main(void) {
 	usb_toggle	= is_tag_enabled("usben");
 	console_toggle	= is_tag_enabled("scon");
 	com2_toggle	= is_tag_enabled("com2en");
-	uartc_toggle	= is_tag_enabled("uartc");
-	uartd_toggle	= is_tag_enabled("uartd");
+	uartc_toggle =  is_tag_enabled("uartc");
+	uartd_toggle =  is_tag_enabled("uartd");
 	if(get_vpd_tag("com2en") == NULL)
 		com2_available = 0;
 	else
 		com2_available = 1;
 	
 #ifndef TARGET_APU1
-<<<<<<< HEAD
 	token = strstr(bootorder_data, "ehcien");
 	token += strlen("ehcien");
 	ehci0_toggle = token ? strtoul(token, NULL, 10) : 1;
@@ -204,16 +197,6 @@ int main(void) {
 	token = strstr(bootorder_data, "watchdog");
 	token += strlen("watchdog");
 	wdg_timeout = token ? (u16) strtoul(token, NULL, 16) : 0;
-=======
-	ehci0_toggle	= is_tag_enabled("ehcien");
-	boost_toggle	= is_tag_enabled("boosten");
-	sd3_toggle	= is_tag_enabled("sd3mode");
-<<<<<<< HEAD
-	wdg_timeout = (u16) strtoul(get_vpd_tag("watchdog"), NULL, 10);
->>>>>>> sortbootorder.c: prepare to port runtime configuration to VPD
-=======
-	wdg_timeout	= (u16) strtoul(get_vpd_tag("watchdog"), NULL, 10);
->>>>>>> sortbootorder.c: do not pass information about SPI flash lock
 #endif
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
@@ -228,7 +211,7 @@ int main(void) {
 			case 'R':
 				for (i = 0; i < max_lines && i < bootlist_def_ln; i++ )
 					copy_list_line(&(bootlist_def[i][0]), &(bootlist[i][0]));
-				int_ids( bootlist, max_lines, bootlist_def_ln);
+				int_ids( bootlist, max_lines, bootlist_def_ln );
 				refresh_tag_values(bootlist_def_ln);
 				break;
 			case 'n':
@@ -297,7 +280,7 @@ int main(void) {
 				// fall through to exit ...
 			case 'x':
 			case 'X':
-				printf("\nExiting...\n");
+				printf("\nExiting ...");
 				RESET();
 				break;
 			default:
@@ -360,18 +343,18 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	char print_device[MAX_LENGTH];
 	u8 usb_status = is_tag_enabled("usben");
 
-	device_toggle[USB_1]  = usb_status;
-	device_toggle[USB_2]  = usb_status;
-	device_toggle[USB_3]  = usb_status;
-	device_toggle[USB_4]  = usb_status;
-	device_toggle[USB_5]  = usb_status;
-	device_toggle[USB_6]  = usb_status;
-	device_toggle[USB_7]  = usb_status;
-	device_toggle[USB_8]  = usb_status;
-	device_toggle[USB_9]  = usb_status;
-	device_toggle[USB_10] = usb_status;
-	device_toggle[USB_11] = usb_status;
-	device_toggle[USB_12] = usb_status;
+	device_toggle[USB_1]  = usb_toggle;
+	device_toggle[USB_2]  = status;
+	device_toggle[USB_3]  = status;
+	device_toggle[USB_4]  = status;
+	device_toggle[USB_5]  = status;
+	device_toggle[USB_6]  = status;
+	device_toggle[USB_7]  = status;
+	device_toggle[USB_8]  = status;
+	device_toggle[USB_9]  = status;
+	device_toggle[USB_10] = status;
+	device_toggle[USB_11] = status;
+	device_toggle[USB_12] = status;
 	device_toggle[IPXE]   = is_tag_enabled("pxen");
 
 	printf("Boot order - type letter to move device to top.\n\n");
@@ -410,6 +393,8 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	printf("  p UART D - Currently %s\n",
 		(uartd_toggle) ? "Enabled" : "Disabled");
 #ifndef TARGET_APU1
+	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n",
+		(mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n",
 		(ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  l Core Performance Boost - Currently %s\n",
@@ -423,6 +408,8 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(iommu_toggle) ? "Enabled" : "Disabled");
 #endif
 #endif
+	printf("  w Enable BIOS write protect - Currently %s\n",
+		(spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
@@ -670,7 +657,6 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	update_tag_value(bootlist, max_lines, "uartc",	uartc_toggle);
 	update_tag_value(bootlist, max_lines, "uartd", uartd_toggle);
 #ifndef TARGET_APU1
-<<<<<<< HEAD
 	update_tag_value(bootlist, max_lines, "mpcie2_clk",
 			 mpcie2_clk_toggle + '0');
 	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle + '0');
@@ -679,11 +665,6 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 #ifndef COREBOOT_LEGACY
 	update_tag_value(bootlist, max_lines, "iommu", iommu_toggle + '0');
 #endif
-=======
-	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle;
-	update_tag_value(bootlist, max_lines, "boosten", boost_toggle);
-	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle);
->>>>>>> sortbootorder.c: prepare to port runtime configuration to VPD
 	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
 #endif
 }
