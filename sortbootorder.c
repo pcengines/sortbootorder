@@ -172,8 +172,8 @@ int main(void) {
 	usb_toggle	= is_tag_enabled("usben");
 	console_toggle	= is_tag_enabled("scon");
 	com2_toggle	= is_tag_enabled("com2en");
-	uartc_toggle =  is_tag_enabled("uartc");
-	uartd_toggle =  is_tag_enabled("uartd");
+	uartc_toggle	= is_tag_enabled("uartc");
+	uartd_toggle	= is_tag_enabled("uartd");
 	if(get_vpd_tag("com2en") == NULL)
 		com2_available = 0;
 	else
@@ -208,8 +208,12 @@ int main(void) {
 	ehci0_toggle	= is_tag_enabled("ehcien");
 	boost_toggle	= is_tag_enabled("boosten");
 	sd3_toggle	= is_tag_enabled("sd3mode");
+<<<<<<< HEAD
 	wdg_timeout = (u16) strtoul(get_vpd_tag("watchdog"), NULL, 10);
 >>>>>>> sortbootorder.c: prepare to port runtime configuration to VPD
+=======
+	wdg_timeout	= (u16) strtoul(get_vpd_tag("watchdog"), NULL, 10);
+>>>>>>> sortbootorder.c: do not pass information about SPI flash lock
 #endif
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
@@ -356,18 +360,18 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	char print_device[MAX_LENGTH];
 	u8 usb_status = is_tag_enabled("usben");
 
-	device_toggle[USB_1]  = usb_toggle;
-	device_toggle[USB_2]  = status;
-	device_toggle[USB_3]  = status;
-	device_toggle[USB_4]  = status;
-	device_toggle[USB_5]  = status;
-	device_toggle[USB_6]  = status;
-	device_toggle[USB_7]  = status;
-	device_toggle[USB_8]  = status;
-	device_toggle[USB_9]  = status;
-	device_toggle[USB_10] = status;
-	device_toggle[USB_11] = status;
-	device_toggle[USB_12] = status;
+	device_toggle[USB_1]  = usb_status;
+	device_toggle[USB_2]  = usb_status;
+	device_toggle[USB_3]  = usb_status;
+	device_toggle[USB_4]  = usb_status;
+	device_toggle[USB_5]  = usb_status;
+	device_toggle[USB_6]  = usb_status;
+	device_toggle[USB_7]  = usb_status;
+	device_toggle[USB_8]  = usb_status;
+	device_toggle[USB_9]  = usb_status;
+	device_toggle[USB_10] = usb_status;
+	device_toggle[USB_11] = usb_status;
+	device_toggle[USB_12] = usb_status;
 	device_toggle[IPXE]   = is_tag_enabled("pxen");
 
 	printf("Boot order - type letter to move device to top.\n\n");
