@@ -458,8 +458,8 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 		return 1;
 	}
 
-	flash_address = (void *)(rom_begin + bootorder_offset);
-	if ((u32)flash_address & 0xfff)
+	flash_address = (rom_begin + bootorder_offset);
+	if (flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 
 
@@ -614,13 +614,12 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle);
 	update_tag_value(bootlist, max_lines, "usben",	usb_toggle);
 	update_tag_value(bootlist, max_lines, "scon", console_toggle);
-	if (get_vpd_tag("com2en")) {
+	if (com2_available)
 		update_tag_value(bootlist, max_lines, "com2en", com2_toggle);
-	}
 	update_tag_value(bootlist, max_lines, "uartc",	uartc_toggle);
 	update_tag_value(bootlist, max_lines, "uartd", uartd_toggle);
 #ifndef TARGET_APU1
-	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle;
+	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle);
 	update_tag_value(bootlist, max_lines, "boosten", boost_toggle);
 	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle);
 	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
