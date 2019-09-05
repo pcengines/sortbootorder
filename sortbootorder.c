@@ -23,6 +23,9 @@
 #include <sec_reg_menu.h>
 #include <spi/spi_lock_menu.h>
 
+#include "utils/lib_vpd.h"
+#include "utils/vpd_tables.h"
+#include "utils/vpd.h"
 #include "version.h"
 
 /*** defines ***/
@@ -73,10 +76,11 @@ static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH],
 static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 			       u8 *max_lines, u16 value);
 #endif
-static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
+static void update_tags(void);
 static void refresh_tag_values(void);
 static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
 static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt);
+static char *set_knob_string(const char* name, u8 knob);
 
 /*** local variables ***/
 static int flash_address;
@@ -275,7 +279,7 @@ int main(void) {
 #endif
 			case 's':
 			case 'S':
-				update_tags(bootlist, &max_lines);
+				update_tags();
 				save_flash(flash_address, bootlist, max_lines);
 				// fall through to exit ...
 			case 'x':
@@ -587,86 +591,261 @@ static void move_boot_list(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line,
 	id[0] = ln;
 }
 
-/*******************************************************************************/
-static void update_tag_value(char buffer[MAX_DEVICES][MAX_LENGTH],
-			     u8 *max_lines, const char * tag, char value)
-{
-	int i;
-	bool found = FALSE;
-
-	for (i = 0; i < *max_lines; i++) {
-		if (!strncmp(tag, &buffer[i][0], strlen(tag))) {
-			found = TRUE;
-			buffer[i][strlen(tag)] = value;
-			break;
-		}
-	}
-
-	if (!found) {
-		if ((*max_lines + 1) > MAX_DEVICES) {
-			return;
-		}
-		strcpy(&buffer[*max_lines][0], tag);
-		buffer[*max_lines][strlen(tag)] = value;
-		buffer[*max_lines][strlen(tag)+1] = '\r';
-		buffer[*max_lines][strlen(tag)+2] = '\n';
-		buffer[*max_lines][strlen(tag)+3] = '0';
-		(*max_lines)++;
-	}
+static vpd_err_t checkKeyName(const uint8_t *name) {
+  unsigned char c;
+  while ((c = *name++)) {
+    if (!(isalnum(c) || c == '_' || c == '.')) {
+      fprintf(stderr, "[ERROR] VPD key name does not allow char [%c].\n", c);
+      return VPD_ERR_PARAM;
+    }
+  }
+  return VPD_OK;
 }
-#ifndef TARGET_APU1
-static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
-				u8 *max_lines, u16 value)
-{
-	int i;
-	bool found = FALSE;
-	char *tag = "watchdog";
 
-	for (i = 0; i < *max_lines; i++) {
-		if (!strncmp(tag, &buffer[i][0], strlen(tag))) {
-			found = TRUE;
-			snprintf(&buffer[i][strlen(tag)], 5, "%04x", value);
-			buffer[*max_lines][strlen(tag)+4] = '\r';
-			buffer[*max_lines][strlen(tag)+5] = '\n';
-			break;
-		}
+
+static vpd_err_t parseString(const uint8_t *string, 
+			     struct PairContainer *set_argument) {
+	uint8_t *key;
+	uint8_t *value;
+	uint8_t *file_contents = NULL;
+	vpd_err_t retval = VPD_OK;
+
+	key = (uint8_t*)strdup((char*)string);
+	if (!key || key[0] == '\0' || key[0] == '=') {
+		if (key) free(key);
+			return VPD_ERR_SYNTAX;
 	}
 
-	if (!found) {
-		if ((*max_lines + 1) > MAX_DEVICES) {
-			return;
-		}
-		strcpy(&buffer[*max_lines][0], tag);
-		snprintf(&buffer[*max_lines][strlen(tag)], 5, "%04x", value);
-		buffer[*max_lines][strlen(tag)+4] = '\r';
-		buffer[*max_lines][strlen(tag)+5] = '\n';
-		buffer[*max_lines][strlen(tag)+6] = '0';
-		(*max_lines)++;
-	}	
+	/*
+	* Goes through the key string, and stops at the first '='.
+	* If '=' is not found, the whole string is the key and
+	* the value points to the end of string ('\0').
+	*/
+	for (value = key; *value && *value != '='; value++);
+	if (*value == '=') {
+		*(value++) = '\0';
+	}
+
+	retval = checkKeyName(key);
+	if (retval == VPD_OK)
+		setString(&set_argument, key, value, pad_value_len);
+
+	free(key);
+
+	return retval;
 }
-#endif
 
-static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
+static int update_tags(void)
 {
-	update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle);
-	update_tag_value(bootlist, max_lines, "usben",	usb_toggle);
-	update_tag_value(bootlist, max_lines, "scon", console_toggle);
-	if (get_vpd_tag("com2en")) {
-		update_tag_value(bootlist, max_lines, "com2en", com2_toggle);
+
+	char tmp;
+	int offset = 0, char_cnt = 0;
+	u32 vpd_offset, vpd_size;
+	struct cbfs_media default_media;
+	struct cbfs_media *media = &default_media;
+	void *vpd_buf;
+	struct PairContainer vpd_content;
+	struct PairContainer set_argument;
+	int retval;
+	struct google_vpd_info *info;
+
+	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
+
+	int rc = fmap_region_by_name("RW_VPD", &vpd_offset,
+				     &vpd_size);
+	if (rc == -1) {
+		printf("Error: BOOTORDER not found!\n");
+		return 1;
 	}
-	update_tag_value(bootlist, max_lines, "uartc",	uartc_toggle);
-	update_tag_value(bootlist, max_lines, "uartd", uartd_toggle);
+
+	flash_address = (rom_begin + vpd_offset);
+	if (flash_address & 0xfff)
+		printf("Warning: VPD is not 4k aligned!\n");
+
+
+	vpd_buf = malloc(vpd_size);
+	initContainer(&vpd_content);
+	initContainer(&set_argument);
+
+	if(!vpd_buf)
+		return -1;
+
+	if (init_default_cbfs_media(media) != 0) {
+		retval = -1;
+		goto teardown;
+	}
+
+	media->open(media);
+
+	if (!media->read(media, vpd_buf, vpd_offset,
+			 vpd_size)) {
+		retval = -1;
+		goto teardown;
+	}
+
+	media->close(media);
+
+	tmp = *(vpd_buf);
+	if (tmp == 0xFF) {
+		printf("Error: VPD is empty!\n");
+		retval = -1;
+		goto teardown;
+	}
+
+	if (vpd_size < sizeof(struct vpd_entry)) {
+		printf("[ERROR] vpd_size:%d is too small to be compared.\n",
+			vpd_size);
+		retval = VPD_ERR_INVALID;
+		goto teardown;
+	}
+
+	index = 0x600 + sizeof(struct google_vpd_info); /* offset to VPD data */
+	for (;
+		vpd_buf[index] != VPD_TYPE_TERMINATOR &&
+		vpd_buf[index] != VPD_TYPE_IMPLICIT_TERMINATOR;) {
+		retval = decodeToContainer(&vpd_content, vpd_size, vpd_buf,
+					   &index);
+	if (VPD_OK != retval) {
+		printf("decodeToContainer() error.\n");
+		goto teardown;
+	}
+
+	if (VPD_OK != parseString(set_knob_string("pxen=", ipxe_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("pxen=", ipxe_toggle));
+		goto teardown;
+	}
+
+	if (VPD_OK != parseString(set_knob_string("usben=", usb_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("usben=", usb_toggle));
+		goto teardown;
+	}
+
+	if (VPD_OK != parseString(set_knob_string("scon=", console_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("scon=", console_toggle));
+		goto teardown;
+	}
+
+	if (com2_available) {
+		if (VPD_OK != parseString(set_knob_string("com2en=",
+					  com2_toggle), &set_argument)) {
+			printf("The string [%s] cannot be parsed.\n",
+				set_knob_string("com2en=", com2_toggle));
+			goto teardown;
+		}
+	}
+
+	if (VPD_OK != parseString(set_knob_string("uartc=", uartc_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("uartc=", uartc_toggle));
+		goto teardown;
+	}
+
+	if (VPD_OK != parseString(set_knob_string("uartd=", uartd_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("uartd=", uartd_toggle));
+		goto teardown;
+	}
+
 #ifndef TARGET_APU1
-	update_tag_value(bootlist, max_lines, "mpcie2_clk",
-			 mpcie2_clk_toggle + '0');
-	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle + '0');
-	update_tag_value(bootlist, max_lines, "boosten", boost_toggle + '0');
-	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle + '0');
-#ifndef COREBOOT_LEGACY
-	update_tag_value(bootlist, max_lines, "iommu", iommu_toggle + '0');
+	if (VPD_OK != parseString(set_knob_string("ehcien=", ehci0_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("ehcien=", ehci0_toggle));
+		goto teardown;
+	}
+
+	if (VPD_OK != parseString(set_knob_string("boosten=", boost_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("boosten=", boost_toggle));
+		goto teardown;
+	}
+
+	if (VPD_OK != parseString(set_knob_string("sd3mode=", sd3_toggle),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("sd3mode=", sd3_toggle));
+		goto teardown;
+	}
+
+	char buf[6];
+	sprintf(buf, "%u", wdg_timeout);
+	if (VPD_OK != parseString(set_knob_string("watchdog=", buf),
+					     &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n",
+			set_knob_string("watchdog=", buf));
+		goto teardown;
+	}
 #endif
-	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
-#endif
+	if (lenOfContainer(&set_argument) > 0) {
+		mergeContainer(&vpd_content, &set_argument);
+	} else {
+		/* No changes made */
+		return 0;
+	}
+	
+	info = (struct google_vpd_info *)&vpd_buf[0x600];
+	/* prepare info */
+	memset(info, 0, sizeof(*info));
+	memcpy(info->header.magic, VPD_INFO_MAGIC, sizeof(info->header.magic));
+	int consumed = sizeof(*info);
+
+	retval = encodeContainer(&vpd_content, vpd_size, &vpd_buf[0x600], &consumed);
+	if (VPD_OK != retval) {
+		printf("encodeContainer() error.\n");
+		goto teardown;
+	}
+	retval = encodeVpdTerminator(vpd_size, &vpd_buf[0x600], &consumed);
+	if (VPD_OK != retval) {
+		printf("Out of space for terminator.\n");
+		goto teardown;
+	}
+	
+	info->size = consumed - sizeof(*info);
+
+	if(memcmp(VPD_ENTRY_MAGIC, vpd_buf, sizeof(VPD_ENTRY_MAGIC) - 1)) {
+		printf("No entry magic at the beginning of VPD\n");
+		goto teardown;
+	}
+	u8 vpd_uuid[] = {
+		0x0a, 0x7c, 0x23, 0xd3, 0x8a, 0x27, 0x42, 0x52, 0x99, 0xbf, 0x78, 0x68, 0xa2, 0xe2, 0x6b, 0x61
+	};
+	index = sizeof(struct vpd_entry);
+	struct vpd_header *header = (struct vpd_header*)(&vpd_buf[index]);
+	struct vpd_table_binary_blob_pointer *data =
+		 (struct vpd_table_binary_blob_pointer *)
+			((uint8_t *)header + sizeof(*header));
+
+	int tries = 0;
+	while (header->type != VPD_TYPE_END) {
+		if (!memcmp(data->uuid, vpd_uuid, sizeof(vpd_uuid)))
+			break;
+		index += sizeof(struct vpd_header *);
+		index += sizeof(struct vpd_table_binary_blob_pointer *);
+		tries++;
+		if (tries > 100) {
+			retval = -1;
+			goto teardown;
+		}
+	}
+
+	data->size = info->size + sizeof(*info);
+
+	hexdump(vpd_buf, vpd_size);
+
+teardown:
+	free(vpd_buf);
+	destroyContainer(&file);
+	destroyContainer(&set_argument);
+	return retval;
 }
 /*******************************************************************************/
 static void refresh_tag_values(u8 max_lines)
@@ -782,4 +961,15 @@ static u8 is_tag_enabled(const char *name)
 		return 0;
 	else
 		return 0;
+}
+
+static char *set_knob_string(const char* name, u8 knob)
+{
+	char *buf = (char *)malloc(strlen(name) + strlen(disabled) + 2);
+	strncpy(buf, name, strlen(name));
+
+	if (knob == 1)
+		return strcat(buf, "enabled");
+	else
+		return strcat(buf, "disabled");
 }
