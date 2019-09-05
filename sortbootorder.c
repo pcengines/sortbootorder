@@ -187,7 +187,7 @@ int main(void) {
 			case 'R':
 				for (i = 0; i < max_lines && i < bootlist_def_ln; i++ )
 					copy_list_line(&(bootlist_def[i][0]), &(bootlist[i][0]));
-				int_ids( bootlist, max_lines, bootlist_def_ln );
+				int_ids( bootlist, max_lines, bootlist_def_ln);
 				refresh_tag_values(bootlist_def_ln);
 				break;
 			case 'n':
@@ -250,7 +250,7 @@ int main(void) {
 				// fall through to exit ...
 			case 'x':
 			case 'X':
-				printf("\nExiting ...");
+				printf("\nExiting...\n");
 				RESET();
 				break;
 			default:
@@ -363,8 +363,6 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	printf("  p UART D - Currently %s\n",
 		(uartd_toggle) ? "Enabled" : "Disabled");
 #ifndef TARGET_APU1
-	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n",
-		(mpcie2_clk_toggle) ? "Enabled" : "Disabled");
 	printf("  h EHCI0 controller - Currently %s\n",
 		(ehci0_toggle) ? "Enabled" : "Disabled");
 	printf("  l Core Performance Boost - Currently %s\n",
@@ -374,8 +372,6 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	printf("  j SD 3.0 mode - Currently %s\n",
 		(sd3_toggle) ? "Enabled" : "Disabled");
 #endif
-	printf("  w Enable BIOS write protect - Currently %s\n",
-		(spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
