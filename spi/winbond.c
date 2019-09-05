@@ -234,9 +234,7 @@ static int winbond_is_locked(struct spi_flash *flash)
 	spi_flash_cmd(flash->spi, CMD_W25_RDSR1, &status, 1);
 
 	if ((status & (REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0))
-	           == (REG_W25_SRP0 | REG_W25_BP2 | REG_W25_BP1 | REG_W25_BP0)) {
 		return 1;
-	}
 
 	return 0;
 }
