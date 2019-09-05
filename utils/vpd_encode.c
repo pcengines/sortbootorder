@@ -21,10 +21,10 @@
  * Returns fail if the buffer is not long enough.
  */
 vpd_err_t encodeLen(
-    const int32_t len,
-    uint8_t *encode_buf,
-    const int32_t max_len,
-    int32_t *encoded_len) {
+    const int len,
+    u8 *encode_buf,
+    const int max_len,
+    int *encoded_len) {
   unsigned int shifting;
   unsigned int reversed_7bits = 0;
   int out_index = 0;
@@ -56,7 +56,7 @@ vpd_err_t encodeLen(
  */
 vpd_err_t encodeVpdTerminator(
     const int max_buffer_len,
-    uint8_t *output_buf,
+    u8 *output_buf,
     int *generated_len) {
   assert(generated_len);
 
@@ -71,11 +71,11 @@ vpd_err_t encodeVpdTerminator(
 
 /* Encodes a string with padding support. */
 vpd_err_t encodeVpdString(
-    const uint8_t *key,
-    const uint8_t *value,
+    const u8 *key,
+    const u8 *value,
     const int pad_value_len,
     const int max_buffer_len,
-    uint8_t *output_buf,
+    u8 *output_buf,
     int *generated_len) {
   int key_len, value_len;
   int ret_len;

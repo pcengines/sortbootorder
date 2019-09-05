@@ -49,8 +49,8 @@ typedef vpd_decode_callback VpdDecodeCallback;
 
 /* Container data types */
 struct StringPair {
-  uint8_t *key;
-  uint8_t *value;
+  u8 *key;
+  u8 *value;
   int pad_len;
   int filter_out;  /* TRUE means not exported. */
   struct StringPair *next;
@@ -77,10 +77,10 @@ struct PairContainer {
  * Returns fail if the buffer is not long enough.
  */
 vpd_err_t encodeLen(
-    const int32_t len,
-    uint8_t *encode_buf,
-    const int32_t max_len,
-    int32_t *encoded_len);
+    const int len,
+    u8 *encode_buf,
+    const int max_len,
+    int *encoded_len);
 
 /* Given an encoded string, this functions decodes the length field which varies
  * from 1 byte to many bytes.
@@ -92,10 +92,10 @@ vpd_err_t encodeLen(
  * Returns VPD_FAIL if more bit is 1, but actually reaches the end of string.
  */
 vpd_err_t decodeLen(
-    const uint32_t max_len,
-    const uint8_t *in,
-    uint32_t *length,
-    uint32_t *decoded_len);
+    const uint max_len,
+    const u8 *in,
+    uint *length,
+    uint *decoded_len);
 
 
 /* Encodes the terminator.
@@ -106,7 +106,7 @@ vpd_err_t decodeLen(
  */
 vpd_err_t encodeVpdTerminator(
     const int max_buffer_len,
-    uint8_t *output_buf,
+    u8 *output_buf,
     int *generated_len);
 
 /* Encodes the given type/key/value pair into buffer.
@@ -130,11 +130,11 @@ vpd_err_t encodeVpdTerminator(
  * can be used between multiple calls to encodeVpd2Pair().
  */
 vpd_err_t encodeVpdString(
-    const uint8_t *key,
-    const uint8_t *value,
+    const u8 *key,
+    const u8 *value,
     const int pad_value_len,
     const int max_buffer_len,
-    uint8_t *output_buf,
+    u8 *output_buf,
     int *generated_len);
 
 
@@ -151,9 +151,9 @@ vpd_err_t encodeVpdString(
  * result.
  */
 vpd_err_t decodeVpdString(
-    const uint32_t max_len,
-    const uint8_t *input_buf,
-    uint32_t *consumed,
+    const uint max_len,
+    const u8 *input_buf,
+    uint *consumed,
     VpdDecodeCallback callback,
     void *callback_arg);
 
@@ -163,15 +163,15 @@ vpd_err_t decodeVpdString(
 void initContainer(struct PairContainer *container);
 
 struct StringPair *findString(struct PairContainer *container,
-                              const uint8_t *key,
+                              const u8 *key,
                               struct StringPair ***prev_next);
 
 /* If key is already existed in container, its value will be replaced.
  * If not existed, creates new entry in container.
  */
 void setString(struct PairContainer *container,
-               const uint8_t *key,
-               const uint8_t *value,
+               const u8 *key,
+               const u8 *value,
                const int pad_len);
 
 /* merge all entries in src into dst. If key is duplicate, overwrite it.
@@ -188,28 +188,28 @@ int subtractContainer(struct PairContainer *dst,
  */
 vpd_err_t encodeContainer(const struct PairContainer *container,
                           const int max_buf_len,
-                          uint8_t *buf,
+                          u8 *buf,
                           int *generated);
 
 /* Given a VPD blob, decode its entries and push into container.
  */
 vpd_err_t decodeToContainer(struct PairContainer *container,
-                            const uint32_t max_len,
-                            const uint8_t *input_buf,
-                            uint32_t *consumed);
+                            const uint max_len,
+                            const u8 *input_buf,
+                            uint *consumed);
 
 /* Set filter for exporting functions.
  * If filter is NULL, resets the filter so that everything can be exported.
  */
 vpd_err_t setContainerFilter(struct PairContainer *container,
-                             const uint8_t *filter);
+                             const u8 *filter);
 
 /*
  * Remove a key.
  * Returns VPD_OK if deleted successfully. Otherwise, VPD_FAIL.
  */
 vpd_err_t deleteKey(struct PairContainer *container,
-                    const uint8_t *key);
+                    const u8 *key);
 
 /*
  * Returns number of pairs in container.
@@ -228,7 +228,7 @@ int lenOfContainer(const struct PairContainer *container);
  */
 vpd_err_t exportStringValue(const struct StringPair *str,
                             const int max_buf_len,
-                            uint8_t *buf,
+                            u8 *buf,
                             int *generated);
 
 /*
@@ -243,7 +243,7 @@ vpd_err_t exportStringValue(const struct StringPair *str,
 vpd_err_t exportContainer(const int export_type,
                           const struct PairContainer *container,
                           const int max_buf_len,
-                          uint8_t *buf,
+                          u8 *buf,
                           int *generated);
 
 void destroyContainer(struct PairContainer *container);
