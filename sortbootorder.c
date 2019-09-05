@@ -74,9 +74,15 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 			       u8 *max_lines, u16 value);
 #endif
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
+<<<<<<< HEAD
 static void refresh_tag_values(u8 max_lines);
 static char *get_vpd_tag(const char *name);
 static u8 is_tag_enabled(const char *name);
+=======
+static void refresh_tag_values(void);
+static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
+static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt);
+>>>>>>> sortbootorder.c: fix access to watchdog knob
 
 /*** local variables ***/
 static int flash_address;
@@ -174,6 +180,7 @@ int main(void) {
 		com2_available = 1;
 	
 #ifndef TARGET_APU1
+<<<<<<< HEAD
 	token = strstr(bootorder_data, "ehcien");
 	token += strlen("ehcien");
 	ehci0_toggle = token ? strtoul(token, NULL, 10) : 1;
@@ -197,6 +204,14 @@ int main(void) {
 	token = strstr(bootorder_data, "watchdog");
 	token += strlen("watchdog");
 	wdg_timeout = token ? (u16) strtoul(token, NULL, 16) : 0;
+=======
+	ehci0_toggle	= is_tag_enabled("ehcien", VPD_ANY, 0);
+	boost_toggle	= is_tag_enabled("boosten", VPD_ANY, 1);
+	sd3_toggle	= is_tag_enabled("sd3mode", VPD_ANY, 0);
+	int wdg_size;
+	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_RO),
+				    NULL, 10);
+>>>>>>> sortbootorder.c: fix access to watchdog knob
 #endif
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
@@ -711,6 +726,7 @@ static void refresh_tag_values(u8 max_lines)
 		}
 
 #ifndef TARGET_APU1
+<<<<<<< HEAD
 		token = strstr(&(bootlist_def[i][0]), "ehcien");
 		if(token) {
 			token += strlen("ehcien");
@@ -743,6 +759,14 @@ static void refresh_tag_values(u8 max_lines)
 			token += strlen("watchdog");
 			wdg_timeout = (u16) strtoul(token, NULL, 16);
 		}
+=======
+	ehci0_toggle = is_tag_enabled("ehcien", VPD_RO, 0);
+	boost_toggle = is_tag_enabled("boosten", VPD_RO, 1);
+	sd3_toggle = is_tag_enabled("sd3mode", VPD_RO, 1);
+	int wdg_size;
+	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_RO),
+				    NULL, 10);
+>>>>>>> sortbootorder.c: fix access to watchdog knob
 #endif
 	}
 }
@@ -751,18 +775,32 @@ static char *get_vpd_tag(const char *name)
 {
 	int tag_size = 10;
 	char vpd_tag[tag_size];
+<<<<<<< HEAD
 	if (!vpd_gets(name, vpd_tag, tag_size, VPD_RW)) {
 		if(!vpd_gets(name, vpd_tag, tag_size, VPD_RO))
 			return NULL;
+=======
+
+	if(vpd_reg == VPD_ANY) {
+		if (!vpd_gets(name, vpd_tag, tag_size, VPD_RW)) {
+			if(!vpd_gets(name, vpd_tag, tag_size, VPD_RO))
+				return NULL;
+		}
+	} else {
+		vpd_gets(name, vpd_tag, tag_size, vpd_reg);
+>>>>>>> sortbootorder.c: fix access to watchdog knob
 	}
 
 	if (!memcmp(vpd_tag, "enabled", strlen("enabled")))
 		return "enabled";
 	else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
 		return "disabled";
+<<<<<<< HEAD
 	else if (!strcmp(name, "watchdog")) {
 		return vpd_tag;
 	}
+=======
+>>>>>>> sortbootorder.c: fix access to watchdog knob
 	else
 		return NULL;
 }
