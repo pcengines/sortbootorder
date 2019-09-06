@@ -74,7 +74,7 @@ static int update_tags(void);
 static void refresh_tag_values(void);
 static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
 static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt);
-static const u8 *set_knob_string(const char* name, u8 knob);
+static const u8 *set_knob_string(const char *name, u8 knob, u8 *knob_value);
 
 /*** local variables ***/
 static int flash_address;
@@ -604,6 +604,7 @@ static int update_tags(void)
 	struct google_vpd_info *info;
 	u32 index;
 	int vpd_address;
+	u8 knob_value[50];
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
@@ -667,76 +668,79 @@ static int update_tags(void)
 		}
 	}
 
-	if (VPD_OK != parseString(set_knob_string("pxen=", ipxe_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("pxen=", ipxe_toggle));
+
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("pxen=", ipxe_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
-	if (VPD_OK != parseString(set_knob_string("usben=", usb_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("usben=", usb_toggle));
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("usben=", usb_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
-	if (VPD_OK != parseString(set_knob_string("scon=", console_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("scon=", console_toggle));
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("scon=", console_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
+	memset(knob_value, 0, 50);
 	if (com2_available) {
 		if (VPD_OK != parseString(set_knob_string("com2en=",
-					  com2_toggle), &set_argument)) {
+					  com2_toggle, knob_value),
+					  &set_argument)) {
 			printf("The string [%s] cannot be parsed.\n",
-				set_knob_string("com2en=", com2_toggle));
+				knob_value);
 			goto teardown;
 		}
 	}
 
-	if (VPD_OK != parseString(set_knob_string("uartc=", uartc_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("uartc=", uartc_toggle));
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("uartc=", uartc_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
-	if (VPD_OK != parseString(set_knob_string("uartd=", uartd_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("uartd=", uartd_toggle));
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("uartd=", uartd_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
 #ifndef TARGET_APU1
-	if (VPD_OK != parseString(set_knob_string("ehcien=", ehci0_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("ehcien=", ehci0_toggle));
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("ehcien=", ehci0_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
-	if (VPD_OK != parseString(set_knob_string("boosten=", boost_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("boosten=", boost_toggle));
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("boosten=", boost_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
-	if (VPD_OK != parseString(set_knob_string("sd3mode=", sd3_toggle),
-					     &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n",
-			set_knob_string("sd3mode=", sd3_toggle));
+	memset(knob_value, 0, 50);
+	if (VPD_OK != parseString(set_knob_string("sd3mode=", sd3_toggle,
+				  knob_value), &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 
-	char buf[20];
-	sprintf(buf, "watchdog=%u", wdg_timeout);
-	if (VPD_OK != parseString((const u8 *)buf, &set_argument)) {
-		printf("The string [%s] cannot be parsed.\n", buf);
+	memset(knob_value, 0, 50);
+	sprintf((char *)knob_value, "watchdog=%u", wdg_timeout);
+	if (VPD_OK != parseString((const u8 *)knob_value, &set_argument)) {
+		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
 	}
 #endif
@@ -860,13 +864,12 @@ static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt)
 		return dflt;
 }
 
-static const u8 *set_knob_string(const char* name, u8 knob)
+static const u8 *set_knob_string(const char* name, u8 knob, u8 *knob_value)
 {
-	char *buf = (char *)malloc(strlen(name) + strlen("disabled") + 2);
-	strncpy(buf, name, strlen(name));
+	strncpy((char *)knob_value, name, strlen(name));
 
 	if (knob == 1)
-		return (const u8 *)strcat(buf, "enabled");
+		return (const u8 *)strcat((char *)knob_value, "enabled");
 	else
-		return (const u8 *)strcat(buf, "disabled");
+		return (const u8 *)strcat((char *)knob_value, "disabled");
 }
