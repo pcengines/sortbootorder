@@ -603,6 +603,7 @@ static int update_tags(void)
 	int retval;
 	struct google_vpd_info *info;
 	u32 index;
+	int vpd_address;
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
@@ -613,8 +614,8 @@ static int update_tags(void)
 		return 1;
 	}
 
-	flash_address = (rom_begin + vpd_offset);
-	if (flash_address & 0xfff)
+	vpd_address = (rom_begin + vpd_offset);
+	if (vpd_address & 0xfff)
 		printf("Warning: VPD is not 4k aligned!\n");
 
 
@@ -798,7 +799,7 @@ static int update_tags(void)
 
 	/* hexdump for debugging, remove later */
 	hexdump(vpd_buf, vpd_size);
-	save_vpd(vpd_offset, vpd_size, vpd_buf);
+	save_vpd(vpd_address, vpd_size, vpd_buf);
 
 teardown:
 	free(vpd_buf);
