@@ -5,6 +5,7 @@
  *
  */
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -207,7 +208,7 @@ vpd_err_t decodeToContainer(struct PairContainer *container,
                             const u32 max_len,
                             const u8 *input_buf,
                             u32 *consumed) {
-  return decodeVpdString(max_len, input_buf, consumed,
+  return vpd_decode_string(max_len, input_buf, consumed,
                          callbackDecodeToContainer, (void*)container);
 }
 

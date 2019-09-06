@@ -8,7 +8,7 @@
 #ifndef __LIB_VPD__
 #define __LIB_VPD__
 
-#include <inttypes.h>
+#include <stdint.h>
 #include "vpd_decode.h"
 
 enum vpd_err {
@@ -92,10 +92,10 @@ vpd_err_t encodeLen(
  * Returns VPD_FAIL if more bit is 1, but actually reaches the end of string.
  */
 vpd_err_t decodeLen(
-    const uint max_len,
+    const u32 max_len,
     const u8 *in,
-    uint *length,
-    uint *decoded_len);
+    u32 *length,
+    u32 *decoded_len);
 
 
 /* Encodes the terminator.
@@ -151,9 +151,9 @@ vpd_err_t encodeVpdString(
  * result.
  */
 vpd_err_t decodeVpdString(
-    const uint max_len,
+    const u32 max_len,
     const u8 *input_buf,
-    uint *consumed,
+    u32 *consumed,
     VpdDecodeCallback callback,
     void *callback_arg);
 
@@ -194,9 +194,9 @@ vpd_err_t encodeContainer(const struct PairContainer *container,
 /* Given a VPD blob, decode its entries and push into container.
  */
 vpd_err_t decodeToContainer(struct PairContainer *container,
-                            const uint max_len,
+                            const u32 max_len,
                             const u8 *input_buf,
-                            uint *consumed);
+                            u32 *consumed);
 
 /* Set filter for exporting functions.
  * If filter is NULL, resets the filter so that everything can be exported.

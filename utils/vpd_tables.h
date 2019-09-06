@@ -9,6 +9,8 @@
 #ifndef __LIB_VPD_TABLES_H__
 #define __LIB_VPD_TABLES_H__
 
+#include <stdint.h>
+
 #define VPD_ENTRY_MAGIC    "_SM_"
 #define VPD_INFO_MAGIC     \
   "\xfe"      /* type: VPD header */       \

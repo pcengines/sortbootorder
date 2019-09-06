@@ -3,7 +3,9 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
+#include <stdint.h>
 #include "vpd_decode.h"
+#include "lib_vpd.h"
 
 static int vpd_decode_len(
 		const u32 max_len, const u8 *in, u32 *length, u32 *decoded_len)
@@ -91,4 +93,21 @@ int vpd_decode_string(
 	}
 
 	return VPD_DECODE_OK;
+}
+
+vpd_err_t decodeVpdString(
+    const u32 max_len, const u8 *input_buf, u32 *consumed,
+    VpdDecodeCallback callback, void *callback_arg)
+{
+  int res = vpd_decode_string(
+      max_len, input_buf, consumed, callback, callback_arg);
+  return res == VPD_DECODE_OK ? VPD_OK : VPD_ERR_DECODE;
+}
+
+vpd_err_t decodeLen(
+    const u32 max_len, const u8 *in, u32 *length,
+    u32 *decoded_len)
+{
+  int res = vpd_decode_len(max_len, in, length, decoded_len);
+  return res == VPD_DECODE_OK ? VPD_OK : VPD_ERR_DECODE;
 }
