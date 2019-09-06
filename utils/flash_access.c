@@ -115,7 +115,7 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 		printf("WARNING: SPI flash lock is enabled."
 			" Saving configuration may fail.\n");
 
-	printf("Updating...\n");
+	printf("Updating bootorder...\n");
 
 	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
 	if (ret) {
@@ -136,6 +136,33 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 	ret = spi_flash_write(flash_device, nvram_pos + flash_address,
 			      sizeof(i % 4),
 			      (u32 *)(cbfs_formatted_list + nvram_pos));
+	if (ret) {
+		printf("Write failed, ret: %d\n", ret);
+		return;
+	}
+
+	printf("Done\n");
+}
+
+void save_vpd(int vpd_offset, size_t vpd_size, u8 *buffer)
+{
+	int ret;
+
+	if (is_flash_locked())
+		printf("WARNING: SPI flash lock is enabled."
+			" Saving configuration may fail.\n");
+
+	printf("Updating VPD...\n");
+
+	ret = spi_flash_erase(flash_device, vpd_offset, vpd_size);
+
+	if (ret) {
+		printf("Erase failed, ret: %d\n", ret);
+		return;
+	}
+
+	ret = spi_flash_write(flash_device, vpd_offset, vpd_size,
+			      (const void *) buffer);
 	if (ret) {
 		printf("Write failed, ret: %d\n", ret);
 		return;
