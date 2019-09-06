@@ -796,7 +796,9 @@ static int update_tags(void)
 
 	data->size = info->size + sizeof(*info);
 
+	/* hexdump for debugging, remove later */
 	hexdump(vpd_buf, vpd_size);
+	save_vpd(vpd_offset, vpd_size, vpd_buf);
 
 teardown:
 	free(vpd_buf);
