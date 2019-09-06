@@ -7,6 +7,7 @@
 #ifndef __VPD_DECODE_H
 #define __VPD_DECODE_H
 
+#include <stdint.h>
 /**
  * Enable kernel types for user land utility.
  * Remove these for kernel or firmware targets.
