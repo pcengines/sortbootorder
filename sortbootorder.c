@@ -150,9 +150,6 @@ int main(void) {
 	fetch_file_from_cbfs(BOOTORDER_DEF, bootlist_def, &bootlist_def_ln);
 	fetch_file_from_cbfs(BOOTORDER_MAP, bootlist_map, &bootlist_map_ln);
 
-	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
-	int_ids( bootlist, max_lines, bootlist_def_ln );
-
 	// Init ipxe and serial status
 
 	ipxe_toggle	= is_tag_enabled("pxen", VPD_ANY, 0);
@@ -488,6 +485,8 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 		return -1;
 	}
 
+	printf("488:bootorder_dat:\n%s\n", bootorder_dat);
+
 	//count up the lines and display
 	*line_count = 0;
 	while (1) {
@@ -595,8 +594,8 @@ static int update_tags(void)
 
 	char tmp;
 	u32 vpd_offset, vpd_size;
-	struct cbfs_media default_media;
-	struct cbfs_media *media = &default_media;
+	//struct cbfs_media default_media;
+	//struct cbfs_media *media = &default_media;
 	u8 *vpd_buf;
 	struct PairContainer vpd_content;
 	struct PairContainer set_argument;
@@ -611,7 +610,7 @@ static int update_tags(void)
 	int rc = fmap_region_by_name("RW_VPD", &vpd_offset,
 				     &vpd_size);
 	if (rc == -1) {
-		printf("Error: BOOTORDER not found!\n");
+		printf("Error: RW_VPD not found!\n");
 		return 1;
 	}
 
@@ -619,28 +618,32 @@ static int update_tags(void)
 	if (vpd_address & 0xfff)
 		printf("Warning: VPD is not 4k aligned!\n");
 
-
-	vpd_buf = (u8 *)malloc(vpd_size);
 	initContainer(&vpd_content);
 	initContainer(&set_argument);
+
+	vpd_buf = (u8 *)malloc(vpd_size);
 
 	if(!vpd_buf)
 		return -1;
 
-	if (init_default_cbfs_media(media) != 0) {
-		retval = -1;
-		goto teardown;
-	}
+	read_vpd(vpd_address, vpd_size, vpd_buf);
 
-	media->open(media);
+	// if (init_default_cbfs_media(media) != 0) {
+	// 	retval = -1;
+	// 	printf("init_default_cbfs_media issue! -> goto teardown\n");
+	// 	goto teardown;
+	// }
 
-	if (!media->read(media, vpd_buf, vpd_offset,
-			 vpd_size)) {
-		retval = -1;
-		goto teardown;
-	}
+	// media->open(media);
 
-	media->close(media);
+	// if (!media->read(media, vpd_buf, vpd_offset,
+	// 		 sizeof(vpd_buf))) {
+	// 	retval = -1;
+	// 	printf("media->read issue! -> goto teardown\n");
+	// 	goto teardown;
+	// }
+
+	// media->close(media);
 
 	tmp = *vpd_buf;
 	if (tmp == 0xFF) {
@@ -648,6 +651,15 @@ static int update_tags(void)
 		retval = -1;
 		goto teardown;
 	}
+
+	//Print vpd_buf to check if correct read
+
+	// printf("vpd_buf:\n");
+	// int k = 0;
+	// k = 0;
+	// for(k=0; k<vpd_size; k++){
+	// 	printf("%c",vpd_buf[k]);
+	// }	
 
 	if (vpd_size < sizeof(struct vpd_entry)) {
 		printf("[ERROR] vpd_size:%d is too small to be compared.\n",
@@ -657,9 +669,13 @@ static int update_tags(void)
 	}
 
 	index = 0x600 + sizeof(struct google_vpd_info); /* offset to VPD data */
+
+	printf("index = %i\n", index);
+
 	for (;
 		vpd_buf[index] != VPD_TYPE_TERMINATOR &&
 		vpd_buf[index] != VPD_TYPE_IMPLICIT_TERMINATOR;) {
+		printf("Decode containter:678\n");
 		retval = decodeToContainer(&vpd_content, vpd_size, vpd_buf,
 					   &index);
 		if (VPD_OK != retval) {
@@ -667,7 +683,6 @@ static int update_tags(void)
 			goto teardown;
 		}
 	}
-
 
 	memset(knob_value, 0, 50);
 	if (VPD_OK != parseString(set_knob_string("pxen=", ipxe_toggle,
@@ -742,8 +757,9 @@ static int update_tags(void)
 	if (VPD_OK != parseString((const u8 *)knob_value, &set_argument)) {
 		printf("The string [%s] cannot be parsed.\n", knob_value);
 		goto teardown;
-	}
+	}	
 #endif
+
 	if (lenOfContainer(&set_argument) > 0) {
 		mergeContainer(&vpd_content, &set_argument);
 	} else {
@@ -788,13 +804,14 @@ static int update_tags(void)
 
 	int tries = 0;
 	while (header->type != VPD_TYPE_END) {
-		if (!memcmp(data->uuid, vpd_uuid, sizeof(vpd_uuid)))
+		if (!memcmp(data->uuid, vpd_uuid, sizeof(data->uuid)))
 			break;
 		index += sizeof(struct vpd_header *);
 		index += sizeof(struct vpd_table_binary_blob_pointer *);
 		tries++;
 		if (tries > 100) {
 			retval = -1;
+			printf("tries > 100 --> goto teardow\n");
 			goto teardown;
 		}
 	}
