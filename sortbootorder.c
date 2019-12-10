@@ -146,7 +146,7 @@ int main(void) {
 #ifdef TARGET_APU1
 	printf("\n### PC Engines apu1 setup %s ###\n", SORTBOOTORDER_VER);
 #else
-	printf("\n### PC Engines apu2 setup %s ###\n", SORTBOOTORDER_VER);
+	printf("\n### PC Engines apu2 setup %s ### BOARD_AUTH_TEST\n", SORTBOOTORDER_VER);
 #endif
 
 	if (init_flash()) {
