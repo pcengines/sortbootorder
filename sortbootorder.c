@@ -131,6 +131,8 @@ int main(void) {
 	struct cbfs_handle *bootorder_handle;
 #endif
 
+    lib_get_sysinfo();
+
 	// Set to enabled because enable toggle is not (yet) implemented for these devices
 	device_toggle[SDCARD] = 1;
 	device_toggle[MSATA] = 1;
@@ -143,11 +145,7 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-#ifdef TARGET_APU1
-	printf("\n### PC Engines apu1 setup %s ###\n", SORTBOOTORDER_VER);
-#else
-	printf("\n### PC Engines apu2 setup %s ### BOARD_AUTH_TEST\n", SORTBOOTORDER_VER);
-#endif
+	printf("\n### PC Engines apu2 setup %s ### BOARD_AUTH_TEST %d\n", SORTBOOTORDER_VER, lib_sysinfo.mainboard.tag);
 
 	if (init_flash()) {
 		printf("Can't initialize flash device!\n");
