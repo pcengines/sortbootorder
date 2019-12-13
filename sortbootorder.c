@@ -150,7 +150,7 @@ int main(void) {
     printf("size: %d\n", lib_sysinfo.mainboard->size);
     printf("vendor_idx: %d\n", lib_sysinfo.mainboard->vendor_idx);
     printf("part_number_idx: %d\n", lib_sysinfo.mainboard->part_number_idx);
-    //printf("strings: %d\n", lib_sysinfo.mainboard->strings);
+    printf("strings: %s\n", lib_sysinfo.mainboard->strings);
 
 
 	if (init_flash()) {
