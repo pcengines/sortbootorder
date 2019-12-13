@@ -145,12 +145,8 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-	printf("\n### PC Engines apu%d setup %s ###\n", lib_sysinfo.mainboard->tag, SORTBOOTORDER_VER);
-    printf("tag: %d\n", lib_sysinfo.mainboard->tag);
-    printf("size: %d\n", lib_sysinfo.mainboard->size);
-    printf("vendor_idx: %d\n", lib_sysinfo.mainboard->vendor_idx);
-    printf("part_number_idx: %d\n", lib_sysinfo.mainboard->part_number_idx);
-    printf("strings: %s\n", lib_sysinfo.mainboard->strings + 11);
+    u8 *apu_id_string = lib_sysinfo.mainboard->strings + lib_sysinfo.mainboard->part_number_idx;
+	printf("\n### PC Engines %s setup %s ###\n", apu_id_string, SORTBOOTORDER_VER);
 
 
 	if (init_flash()) {
