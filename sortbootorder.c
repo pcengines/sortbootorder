@@ -131,7 +131,7 @@ int main(void) {
 	struct cbfs_handle *bootorder_handle;
 #endif
 
-    lib_get_sysinfo();
+    	lib_get_sysinfo();
 
 	// Set to enabled because enable toggle is not (yet) implemented for these devices
 	device_toggle[SDCARD] = 1;
@@ -145,7 +145,7 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-    u8 *apu_id_string = lib_sysinfo.mainboard->strings + lib_sysinfo.mainboard->part_number_idx;
+    	u8 *apu_id_string = lib_sysinfo.mainboard->strings + lib_sysinfo.mainboard->part_number_idx;
 	printf("\n### PC Engines %s setup %s ###\n", apu_id_string, SORTBOOTORDER_VER);
 
 
