@@ -93,11 +93,13 @@ static u8 ehci0_toggle;
 static u8 mpcie2_clk_toggle;
 static u8 boost_toggle;
 static u8 sd3_toggle;
+static u8 iommu_toggle;
 static u16 wdg_timeout;
 #endif
 
 static u8 uartc_toggle;
 static u8 uartd_toggle;
+
 
 
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
@@ -214,6 +216,10 @@ int main(void) {
 	token += strlen("sd3mode");
 	sd3_toggle = token ? strtoul(token, NULL, 10) : 0;
 
+	token = strstr(bootorder_data, "iommu");
+	token += strlen("iommu");
+	iommu_toggle = token ? strtoul(token, NULL, 10) : 0;
+
 	token = strstr(bootorder_data, "watchdog");
 	token += strlen("watchdog");
 	wdg_timeout = token ? (u16) strtoul(token, NULL, 16) : 0;
@@ -298,6 +304,10 @@ int main(void) {
 			case 'J':
 				sd3_toggle ^= 0x1;
 				break;
+            case 'v':
+            case 'V':
+                iommu_toggle ^= 0x1;
+                break;
 			case 'Q':
 				handle_spi_lock_menu();
 				break;
@@ -434,6 +444,8 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(wdg_timeout) ? "Enabled" : "Disabled");
 	printf("  j SD 3.0 mode - Currently %s\n",
 		(sd3_toggle) ? "Enabled" : "Disabled");
+    printf("  v Iommu - Currently %s\n",
+        (iommu_toggle) ? "Enabled" : "Disabled");
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n",
 		(spi_wp_toggle) ? "Enabled" : "Disabled");
@@ -606,6 +618,7 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle + '0');
 	update_tag_value(bootlist, max_lines, "boosten", boost_toggle + '0');
 	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle + '0');
+	update_tag_value(bootlist, max_lines, "iommu", iommu_toggle + '0');
 	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
 #endif
 }
@@ -671,6 +684,11 @@ static void refresh_tag_values(u8 max_lines)
 		if(token) {
 			token += strlen("sd3mode");
 			sd3_toggle = strtoul(token, NULL, 10);
+		}
+		token = strstr(&(bootlist_def[i][0]), "iommu");
+		if(token) {
+			token += strlen("iommu");
+			iommu_toggle = strtoul(token, NULL, 10);
 		}
 
 		token = strstr(&(bootlist_def[i][0]), "watchdog");
