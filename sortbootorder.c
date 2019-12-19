@@ -100,8 +100,6 @@ static u16 wdg_timeout;
 static u8 uartc_toggle;
 static u8 uartd_toggle;
 
-
-
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
 static char id[MAX_DEVICES] = {0};
@@ -304,10 +302,10 @@ int main(void) {
 			case 'J':
 				sd3_toggle ^= 0x1;
 				break;
-            case 'v':
-            case 'V':
-                iommu_toggle ^= 0x1;
-                break;
+			case 'v':
+			case 'V':
+				iommu_toggle ^= 0x1;
+				break;
 			case 'Q':
 				handle_spi_lock_menu();
 				break;
@@ -444,8 +442,8 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(wdg_timeout) ? "Enabled" : "Disabled");
 	printf("  j SD 3.0 mode - Currently %s\n",
 		(sd3_toggle) ? "Enabled" : "Disabled");
-    printf("  v Iommu - Currently %s\n",
-        (iommu_toggle) ? "Enabled" : "Disabled");
+	printf("  v IOMMU - Currently %s\n",
+		(iommu_toggle) ? "Enabled" : "Disabled");
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n",
 		(spi_wp_toggle) ? "Enabled" : "Disabled");
