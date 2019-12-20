@@ -51,6 +51,7 @@ saves boot order in flash.
   m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently Disabled
   h EHCI0 controller - Currently Disabled
   l Core Performance Boost - Currently Enabled
+  v IOMMU - Currently Disabled
   w Enable BIOS write protect - Currently Disabled
   x Exit setup without save
   s Save configuration and exit
@@ -90,6 +91,7 @@ key.
   **watchdog later. Too low value may result in a reset loop!**
 * `j SD 3.0 mode` - enable SD controller in 3.0 mode to allow achieving full
   speeds with UHS-I SD cards
+* `v IOMMU` - enables/disables input–output memory management unit
 * `w Enable BIOS write protect` - enables/disables BIOS WP functionality. For
   details, see descritption in [BIOS WP option](#bios-wp-option).
 * `x Exit setup without save` - exits setup menu without saving the settings
@@ -171,6 +173,7 @@ file is used to match device letter and description with corresponding node from
   Core Performance Boost - Enabled
   Watchdog - Disabled
   SD 3.0 mode - Disabled
+  IOMMU - Disabled
   Redirect console output to COM2 - Disabled
   BIOS write protect - Disabled
   ```
