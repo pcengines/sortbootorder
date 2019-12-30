@@ -93,7 +93,9 @@ static u8 ehci0_toggle;
 static u8 mpcie2_clk_toggle;
 static u8 boost_toggle;
 static u8 sd3_toggle;
+#ifndef COREBOOT_LEGACY
 static u8 iommu_toggle;
+#endif
 static u16 wdg_timeout;
 #endif
 
@@ -131,7 +133,7 @@ int main(void) {
 	struct cbfs_handle *bootorder_handle;
 #endif
 
-    	lib_get_sysinfo();
+	lib_get_sysinfo();
 
 	// Set to enabled because enable toggle is not (yet) implemented for these devices
 	device_toggle[SDCARD] = 1;
@@ -145,8 +147,10 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 
-    	u8 *apu_id_string = lib_sysinfo.mainboard->strings + lib_sysinfo.mainboard->part_number_idx;
-	printf("\n### PC Engines %s setup %s ###\n", apu_id_string, SORTBOOTORDER_VER);
+	u8 *apu_id_string = lib_sysinfo.mainboard->strings +
+			    lib_sysinfo.mainboard->part_number_idx;
+	printf("\n### PC Engines %s setup %s ###\n", apu_id_string,
+		SORTBOOTORDER_VER);
 
 
 	if (init_flash()) {
@@ -213,11 +217,11 @@ int main(void) {
 	token = strstr(bootorder_data, "sd3mode");
 	token += strlen("sd3mode");
 	sd3_toggle = token ? strtoul(token, NULL, 10) : 0;
-
+#ifndef COREBOOT_LEGACY
 	token = strstr(bootorder_data, "iommu");
 	token += strlen("iommu");
 	iommu_toggle = token ? strtoul(token, NULL, 10) : 0;
-
+#endif
 	token = strstr(bootorder_data, "watchdog");
 	token += strlen("watchdog");
 	wdg_timeout = token ? (u16) strtoul(token, NULL, 16) : 0;
@@ -302,10 +306,12 @@ int main(void) {
 			case 'J':
 				sd3_toggle ^= 0x1;
 				break;
+#ifndef COREBOOT_LEGACY
 			case 'v':
 			case 'V':
 				iommu_toggle ^= 0x1;
 				break;
+#endif
 			case 'Q':
 				handle_spi_lock_menu();
 				break;
@@ -442,8 +448,10 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(wdg_timeout) ? "Enabled" : "Disabled");
 	printf("  j SD 3.0 mode - Currently %s\n",
 		(sd3_toggle) ? "Enabled" : "Disabled");
+#ifndef COREBOOT_LEGACY
 	printf("  v IOMMU - Currently %s\n",
 		(iommu_toggle) ? "Enabled" : "Disabled");
+#endif
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n",
 		(spi_wp_toggle) ? "Enabled" : "Disabled");
@@ -616,7 +624,9 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle + '0');
 	update_tag_value(bootlist, max_lines, "boosten", boost_toggle + '0');
 	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle + '0');
+#ifndef COREBOOT_LEGACY
 	update_tag_value(bootlist, max_lines, "iommu", iommu_toggle + '0');
+#endif
 	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
 #endif
 }
@@ -683,12 +693,13 @@ static void refresh_tag_values(u8 max_lines)
 			token += strlen("sd3mode");
 			sd3_toggle = strtoul(token, NULL, 10);
 		}
+#ifndef COREBOOT_LEGACY
 		token = strstr(&(bootlist_def[i][0]), "iommu");
 		if(token) {
 			token += strlen("iommu");
 			iommu_toggle = strtoul(token, NULL, 10);
 		}
-
+#endif
 		token = strstr(&(bootlist_def[i][0]), "watchdog");
 		if(token) {
 			token += strlen("watchdog");
