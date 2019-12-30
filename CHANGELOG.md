@@ -9,8 +9,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 ## [Unreleased]
 ## [v4.6.16] - 2019-12-30
 ### Added
-- board autodetection in the top banner
 - IOMMU runtime configuration
+
+### Fixed
+- top banner displays the correct board name
 
 ## [v4.6.15] - 2019-07-05
 ### Fixed
