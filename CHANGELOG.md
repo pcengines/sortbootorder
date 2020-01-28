@@ -7,6 +7,11 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.6.17] - 2020-01-28
+### Changed
+- disabled PS2 keyboard and mouse by default, not supported on apu platforms
+  caused an error with keyboard initialization
+
 ## [v4.6.16] - 2019-12-30
 ### Added
 - IOMMU runtime configuration
@@ -179,7 +184,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.16...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.17...master
+[v4.6.17]: https://github.com/pcengines/sortbootorder/compare/v4.6.16...v4.6.17
 [v4.6.16]: https://github.com/pcengines/sortbootorder/compare/v4.6.15...v4.6.16
 [v4.6.15]: https://github.com/pcengines/sortbootorder/compare/v4.6.14...v4.6.15
 [v4.6.14]: https://github.com/pcengines/sortbootorder/compare/v4.6.13...v4.6.14
