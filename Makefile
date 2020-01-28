@@ -43,7 +43,7 @@ HOSTCXXFLAGS := -I$(src)
 LIBPAYLOAD_PATH := $(realpath $(KDIR)/payloads/libpayload)
 LIBPAYLOAD_OBJ := $(build_dir)/libpayload
 HAVE_LIBPAYLOAD := $(wildcard $(LIBPAYLOAD_OBJ)/lib/libpayload.a)
-LIBPAYLOAD_CONFIG ?= configs/defconfig-tinycurses
+LIBPAYLOAD_CONFIG ?= $(src)/defconfig-apu
 OBJCOPY ?= objcopy
 
 INCLUDES = -I$(src)/include -I$(KDIR)/src/commonlib/include
