@@ -708,12 +708,12 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	printf("index = %x\n", index);
 	printf("vpd_size = %x\n", vpd_size);
 
-	hexdump(vpd_buf, vpd_size);
+	// hexdump(vpd_buf, vpd_size);
 
 	for ( ;
 		vpd_buf[index] != VPD_TYPE_TERMINATOR &&
 		vpd_buf[index] != VPD_TYPE_IMPLICIT_TERMINATOR; ) {
-		printf("Decode containter:678\n");
+		//printf("Decode containter:678\n");
 		retval = decodeToContainer(&vpd_content, vpd_size, vpd_buf,
 					   &index);
 		if (VPD_OK != retval) {
@@ -844,6 +844,8 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 		0x0a, 0x7c, 0x23, 0xd3, 0x8a, 0x27, 0x42, 0x52, 0x99, 0xbf, 0x78, 0x68, 0xa2, 0xe2, 0x6b, 0x61
 	};
 	index = sizeof(struct vpd_entry);
+	//printf("847: index = %x\n", index);
+	
 	struct vpd_header *header = (struct vpd_header*)(&vpd_buf[index]);
 	struct vpd_table_binary_blob_pointer *data =
 		 (struct vpd_table_binary_blob_pointer *)
@@ -853,8 +855,28 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	while (header->type != VPD_TYPE_END) {
 		if (!memcmp(data->uuid, vpd_uuid, sizeof(data->uuid)))
 			break;
-		index += sizeof(struct vpd_header *);
-		index += sizeof(struct vpd_table_binary_blob_pointer *);
+		/* index MUST eventually meet 0x5b value*/
+
+		printf("vpdbuf[%x] = %x\n", index, vpd_buf[index]);
+
+		char *str = (char*)header + header->length;
+		int length = sizeof(struct vpd_header) +
+               sizeof(struct vpd_table_binary_blob_pointer);
+
+		int i = 0;
+		/* Four variant-length strings are following header. */
+		for (i = 0; i < 4; ++i) {
+			int len = strlen(str) + 1;
+			length += len;
+			str += len;
+		}
+
+		index += length;
+
+		header = (struct vpd_header*)(&vpd_buf[index]);
+		data = (struct vpd_table_binary_blob_pointer *)
+					((u8 *)header + sizeof(*header));
+
 		tries++;
 		if (tries > 100) {
 			retval = -1;
