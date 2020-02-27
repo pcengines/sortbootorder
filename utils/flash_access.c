@@ -191,17 +191,17 @@ void save_vpd(int vpd_offset, size_t vpd_size, u8 *buffer)
 void read_vpd(int vpd_offset, size_t vpd_size, u8 *buffer){
 
 	int ret;
-	int chunk_size = 68;
-	u8 *tmp_buffer = 0;
+	size_t chunk_size = 64;
+	u8 tmp_buffer[64] ={0x00};
 
 	printf("Read VPD keys from SPI flash...");
 
-	int i = 0;
-	int j = 0;
+	size_t i = 0;
+	size_t j = 0;
 	while (i < vpd_size){
 
 		ret = spi_flash_read(flash_device, vpd_offset + i, 
-						chunk_size, (u8*)tmp_buffer);
+						chunk_size, tmp_buffer);
 
 		if (ret) {
 			printf("\nRead failed, ret: %d\n", ret);
