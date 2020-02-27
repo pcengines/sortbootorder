@@ -72,7 +72,7 @@ static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
 		    u8 lineDef_cnt );
 static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
 static void refresh_tag_values(u8 max_lines);
-// static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
+static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
 static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt);
 static const u8 *set_knob_string(const char *name, u8 knob, u8 *knob_value);
 
@@ -161,15 +161,22 @@ int main(void) {
 	if ((u32)tmp & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 #else
-	// For mainline bootorder is in FMAP, not CBFS
+	// For coreboot mainline bootorder is in FMAP
 	fetch_bootorder(bootlist, &max_lines);
 #endif
 
 	// Get required files from CBFS
-	
-	//fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
+#ifdef COREBOOT_LEGACY
+	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
+#endif
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
 	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
+
+	/* com2 is not present on apu5 */
+	if(get_vpd_tag("com2en", VPD_ANY) == NULL)
+		com2_available = 0;
+	else
+		com2_available = 1;
 
 	ipxe_toggle = is_tag_enabled("pxen", VPD_ANY, 0);
 	usb_toggle = is_tag_enabled("usben", VPD_ANY, 1);
@@ -185,7 +192,9 @@ int main(void) {
 #ifndef COREBOOT_LEGACY
 	iommu_toggle = is_tag_enabled("iommu", VPD_ANY, 0);
 #endif
-	wdg_timeout = is_tag_enabled("watchdog", VPD_ANY, 0);
+	int wdg_size;
+	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_RO),
+				    NULL, 10);
 #endif
 
 	spi_wp_toggle = is_flash_locked();
@@ -625,8 +634,6 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 
 	char tmp;
 	u32 vpd_offset, vpd_size;
-	//struct cbfs_media default_media;
-	//struct cbfs_media *media = &default_media;
 	u8 *vpd_buf;
 	struct PairContainer vpd_content;
 	struct PairContainer set_argument;
@@ -659,41 +666,12 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 
 	read_vpd(vpd_address, vpd_size, vpd_buf);
 
-	// if (init_default_cbfs_media(media) != 0) {
-	// 	retval = -1;
-	// 	printf("init_default_cbfs_media issue! -> goto teardown\n");
-	// 	goto teardown;
-	// }
-
-	// media->open(media);
-
-	// if (!media->read(media, vpd_buf, vpd_offset,
-	// 		 sizeof(vpd_buf))) {
-	// 	retval = -1;
-	// 	printf("media->read issue! -> goto teardown\n");
-	// 	goto teardown;
-	// }
-
-	// media->close(media);
-
 	tmp = *vpd_buf;
 	if (tmp == 0xFF) {
 		printf("Error: VPD is empty!\n");
 		retval = -1;
 		goto teardown;
 	}
-
-	//Print vpd_buf to check if correct read
-
-	// printf("vpd_buf:\n");
-	// int k = 0;
-	// k = 0;
-	// for(k=0; k<vpd_size; k++){
-	// 	printf("%02x",vpd_buf[k]);
-
-	// 	if (k % 16 == 0)
-	// 		printf("\n");
-	// }
 
 	if (vpd_size < sizeof(struct vpd_entry)) {
 		printf("[ERROR] vpd_size:%d is too small to be compared.\n",
@@ -704,16 +682,14 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 
 	index = 0x600 + sizeof(struct google_vpd_info); /* offset to VPD data */
 
-	printf("vpd_address = %x\n", vpd_address);
-	printf("index = %x\n", index);
-	printf("vpd_size = %x\n", vpd_size);
-
-	// hexdump(vpd_buf, vpd_size);
+	/* Debug output. Remove in final version. */
+	// printf("vpd_address = %x\n", vpd_address);
+	// printf("index = %x\n", index);
+	// printf("vpd_size = %x\n", vpd_size);
 
 	for ( ;
 		vpd_buf[index] != VPD_TYPE_TERMINATOR &&
 		vpd_buf[index] != VPD_TYPE_IMPLICIT_TERMINATOR; ) {
-		//printf("Decode containter:678\n");
 		retval = decodeToContainer(&vpd_content, vpd_size, vpd_buf,
 					   &index);
 		if (VPD_OK != retval) {
@@ -844,7 +820,6 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 		0x0a, 0x7c, 0x23, 0xd3, 0x8a, 0x27, 0x42, 0x52, 0x99, 0xbf, 0x78, 0x68, 0xa2, 0xe2, 0x6b, 0x61
 	};
 	index = sizeof(struct vpd_entry);
-	//printf("847: index = %x\n", index);
 	
 	struct vpd_header *header = (struct vpd_header*)(&vpd_buf[index]);
 	struct vpd_table_binary_blob_pointer *data =
@@ -855,16 +830,15 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	while (header->type != VPD_TYPE_END) {
 		if (!memcmp(data->uuid, vpd_uuid, sizeof(data->uuid)))
 			break;
+			
 		/* index MUST eventually meet 0x5b value*/
-
-		printf("vpdbuf[%x] = %x\n", index, vpd_buf[index]);
 
 		char *str = (char*)header + header->length;
 		int length = sizeof(struct vpd_header) +
                sizeof(struct vpd_table_binary_blob_pointer);
 
-		int i = 0;
 		/* Four variant-length strings are following header. */
+		int i = 0;
 		for (i = 0; i < 4; ++i) {
 			int len = strlen(str) + 1;
 			length += len;
@@ -900,21 +874,23 @@ teardown:
 /*******************************************************************************/
 static void refresh_tag_values(u8 max_lines)
 {
-	ipxe_toggle = is_tag_enabled("pxen", VPD_ANY, 0);
-	usb_toggle = is_tag_enabled("usben", VPD_ANY, 1);
-	console_toggle = is_tag_enabled("scon", VPD_ANY, 1);
-	com2_toggle = is_tag_enabled("com2en", VPD_ANY, 0);
-	uartc_toggle = is_tag_enabled("uartc", VPD_ANY, 0);
-	uartd_toggle = is_tag_enabled("uartd", VPD_ANY, 0);
+	ipxe_toggle = is_tag_enabled("pxen", VPD_RO, 0);
+	usb_toggle = is_tag_enabled("usben", VPD_RO, 1);
+	console_toggle = is_tag_enabled("scon", VPD_RO, 1);
+	com2_toggle = is_tag_enabled("com2en", VPD_RO, 0);
+	uartc_toggle = is_tag_enabled("uartc", VPD_RO, 0);
+	uartd_toggle = is_tag_enabled("uartd", VPD_RO, 0);
 #ifndef TARGET_APU1
-	ehci0_toggle = is_tag_enabled("ehcien", VPD_ANY, 0);
-	mpcie2_clk_toggle = is_tag_enabled("mpcie2_clk", VPD_ANY, 0);
-	boost_toggle = is_tag_enabled("boosten", VPD_ANY, 1);
-	sd3_toggle = is_tag_enabled("sd3mode", VPD_ANY, 0);
+	ehci0_toggle = is_tag_enabled("ehcien", VPD_RO, 0);
+	mpcie2_clk_toggle = is_tag_enabled("mpcie2_clk", VPD_RO, 0);
+	boost_toggle = is_tag_enabled("boosten", VPD_RO, 1);
+	sd3_toggle = is_tag_enabled("sd3mode", VPD_RO, 0);
 #ifndef COREBOOT_LEGACY
-	iommu_toggle = is_tag_enabled("iommu", VPD_ANY, 0);
+	iommu_toggle = is_tag_enabled("iommu", VPD_RO, 0);
 #endif
-	wdg_timeout = is_tag_enabled("watchdog", VPD_ANY, 0);
+	int wdg_size;
+	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_RO),
+				    NULL, 10);
 #endif
 }
 
