@@ -72,7 +72,7 @@ static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
 		    u8 lineDef_cnt );
 static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
 static void refresh_tag_values(u8 max_lines);
-static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
+// static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg);
 static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt);
 static const u8 *set_knob_string(const char *name, u8 knob, u8 *knob_value);
 
@@ -173,10 +173,10 @@ int main(void) {
 	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
 
 	/* com2 is not present on apu5 */
-	if(get_vpd_tag("com2en", VPD_ANY) == NULL)
-		com2_available = 0;
-	else
-		com2_available = 1;
+	// if(get_vpd_tag("com2en", VPD_ANY) == NULL)
+	// 	com2_available = 0;
+	// else
+	// 	com2_available = 1;
 
 	ipxe_toggle = is_tag_enabled("pxen", VPD_ANY, 0);
 	usb_toggle = is_tag_enabled("usben", VPD_ANY, 1);
@@ -410,6 +410,8 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n",
 		(spi_wp_toggle) ? "Enabled" : "Disabled");
+
+	printf("\n");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
@@ -830,7 +832,7 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	while (header->type != VPD_TYPE_END) {
 		if (!memcmp(data->uuid, vpd_uuid, sizeof(data->uuid)))
 			break;
-			
+
 		/* index MUST eventually meet 0x5b value*/
 
 		char *str = (char*)header + header->length;
@@ -894,38 +896,6 @@ static void refresh_tag_values(u8 max_lines)
 #endif
 }
 
-static char *get_vpd_tag(const char *name, enum vpd_region vpd_reg)
-{
-	int tag_size = 10;
-	char vpd_tag[tag_size];
-
-	if(vpd_reg == VPD_ANY) {
-		if (!vpd_gets(name, vpd_tag, tag_size, VPD_RW)) {
-			if(!vpd_gets(name, vpd_tag, tag_size, VPD_RO))
-				return NULL;
-		}
-	} else {
-		vpd_gets(name, vpd_tag, tag_size, vpd_reg);
-	}
-
-	if (!memcmp(vpd_tag, "enabled", strlen("enabled")))
-		return "enabled";
-	else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
-		return "disabled";
-	else
-		return NULL;
-}
-
-static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt)
-{
-	if (!memcmp(get_vpd_tag(name, vpd_reg), "enabled", strlen("enabled")))
-		return 1;
-	else if (!memcmp(get_vpd_tag(name, vpd_reg), "disabled", strlen("disabled")))
-		return 0;
-	else
-		return dflt;
-}
-
 static const u8 *set_knob_string(const char* name, u8 knob, u8 *knob_value)
 {
 	strncpy((char *)knob_value, name, strlen(name));
@@ -934,4 +904,52 @@ static const u8 *set_knob_string(const char* name, u8 knob, u8 *knob_value)
 		return (const u8 *)strcat((char *)knob_value, "enabled");
 	else
 		return (const u8 *)strcat((char *)knob_value, "disabled");
+}
+
+static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt)
+{
+	int tag_size = 10;
+	char vpd_tag[tag_size];
+
+	if(vpd_reg == VPD_ANY || vpd_reg == VPD_RW) {
+
+		/* Check if key is present in RW and has correct value */
+		if (vpd_gets(name, vpd_tag, tag_size, VPD_RW)){
+			if (!memcmp(vpd_tag, "enabled", strlen("enabled")))
+				return 1;
+			else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
+				return 0;
+		}
+
+		/* Key is not present in RW or has incorrect value, check RO */
+		if (vpd_gets(name, vpd_tag, tag_size, VPD_RO)){
+			if (!memcmp(vpd_tag, "enabled", strlen("enabled")))
+				return 1;
+			else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
+				return 0;
+		}
+
+		/* Key is not present in RW neither RO or has incorrect values, 
+			take default*/
+		return dflt;
+	}
+
+	else if(vpd_reg == VPD_RO){
+
+		/* Check if key is present in RO region */
+		if (vpd_gets(name, vpd_tag, tag_size, VPD_RO)){
+			if (!memcmp(vpd_tag, "enabled", strlen("enabled")))
+				return 1;
+			else if (!memcmp(vpd_tag, "disabled", strlen("disabled")))
+				return 0;
+		}
+
+		/* Key is not present in RO or has incoreect value, 
+			take default */
+		return dflt;
+	}
+
+	/* Wrong region is passed to function */
+	else
+		return dflt;
 }
