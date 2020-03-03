@@ -94,7 +94,7 @@ inline int send_flash_cmd_write(u8 command, size_t cmd_len, const void *data,
 
 /*******************************************************************************/
 void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
-	        u8 max_lines, u8 spi_wp_toggle) {
+	        u8 max_lines) {
 	int i = 0;
 	int k = 0;
 	int j, ret;
@@ -111,25 +111,18 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 	}
 	cbfs_formatted_list[i++] = NUL;
 
-	// try to unlock the flash if it is locked
-	if (spi_flash_is_locked(flash_device)) {
-		spi_flash_unlock(flash_device);
-		if (spi_flash_is_locked(flash_device)) {
-			printf("Flash is write protected. Exiting...\n");
-			return;
-		}
-	}
+	if (is_flash_locked())
+		printf("WARNING: SPI flash lock is enabled."
+			" Saving configuration may fail.\n");
 
-	printf("Erasing Flash size 0x%x @ 0x%x\n",
-	       FLASH_SIZE_CHUNK, flash_address);
+	printf("Updating bootorder...\n");
+
 	ret = spi_flash_erase(flash_device, flash_address, FLASH_SIZE_CHUNK);
 	if (ret) {
 		printf("Erase failed, ret: %d\n", ret);
 		return;
 	}
 
-	printf("Writing %d bytes @ 0x%x\n", i, flash_address);
-	// write first 512 bytes
 	for (nvram_pos = 0; nvram_pos < (i & 0xFFFC); nvram_pos += 4) {
 		ret = spi_flash_write(flash_device, nvram_pos + flash_address,
 				      sizeof(u32),
@@ -148,12 +141,78 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 		return;
 	}
 
-	if (spi_wp_toggle) {
-		printf("Enabling flash write protect...\n");
-		spi_flash_lock(flash_device);
+	printf("Done\n");
+}
+
+void save_vpd(int vpd_offset, size_t vpd_size, u8 *buffer)
+{
+	int ret;
+
+	if (is_flash_locked())
+		printf("WARNING: SPI flash lock is enabled."
+			" Saving configuration may fail.\n");
+
+	printf("Updating VPD...\n");
+
+	ret = spi_flash_erase(flash_device, vpd_offset, vpd_size);
+
+	if (ret) {
+		printf("Erase failed, ret: %d\n", ret);
+		return;
 	}
 
-	spi_wp_toggle = spi_flash_is_locked(flash_device);
+	ret = spi_flash_write(flash_device, vpd_offset, vpd_size,
+			      (const void *) buffer);
+	if (ret) {
+		printf("Write failed, ret: %d\n", ret);
+		return;
+	}
 
+	printf("Done\n");
+}
+
+// void read_vpd(int vpd_offset, size_t vpd_size, u8 *buffer){
+
+// 	int ret;
+
+// 	printf("Read VPD...\n");
+
+// 	ret = spi_flash_read(flash_device, vpd_offset, vpd_size,
+// 			      (void *) buffer);
+// 	if (ret) {
+// 		printf("Read failed, ret: %d\n", ret);
+// 		return;
+// 	}
+
+// 	printf("Done\n");
+// }
+
+
+void read_vpd(int vpd_offset, size_t vpd_size, u8 *buffer){
+
+	int ret;
+	size_t chunk_size = 64;
+	u8 tmp_buffer[64] ={0x00};
+
+	printf("Read VPD keys from SPI flash...");
+
+	size_t i = 0;
+	size_t j = 0;
+	while (i < vpd_size){
+
+		ret = spi_flash_read(flash_device, vpd_offset + i, 
+						chunk_size, tmp_buffer);
+
+		if (ret) {
+			printf("\nRead failed, ret: %d\n", ret);
+			return;
+		}
+
+		for(j = 0; j < chunk_size; j++){
+			buffer[i + j] = tmp_buffer[j];
+		}
+		i += chunk_size;
+	}
+	
 	printf("Done\n");
 }
