@@ -173,10 +173,10 @@ int main(void) {
 	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
 
 	/* com2 is not present on apu5 */
-	// if(get_vpd_tag("com2en", VPD_ANY) == NULL)
-	// 	com2_available = 0;
-	// else
-	// 	com2_available = 1;
+	if(is_tag_enabled("com2en", VPD_ANY, 2) == 2)
+		com2_available = 0;
+	else
+		com2_available = 1;
 
 	ipxe_toggle = is_tag_enabled("pxen", VPD_ANY, 0);
 	usb_toggle = is_tag_enabled("usben", VPD_ANY, 1);
@@ -906,6 +906,12 @@ static const u8 *set_knob_string(const char* name, u8 knob, u8 *knob_value)
 		return (const u8 *)strcat((char *)knob_value, "disabled");
 }
 
+/* is_tag_enabled() return value: 
+ *		0 - tag is not enabled
+ *		1 - tag is enabled
+ *		2 - tag is not available
+ */
+
 static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt)
 {
 	int tag_size = 10;
@@ -929,7 +935,7 @@ static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt)
 				return 0;
 		}
 
-		/* Key is not present in RW neither RO or has incorrect values, 
+		/* Key is not present in RW neither RO or has incorrect values,
 			take default*/
 		return dflt;
 	}
@@ -944,7 +950,7 @@ static u8 is_tag_enabled(const char *name, enum vpd_region vpd_reg, u8 dflt)
 				return 0;
 		}
 
-		/* Key is not present in RO or has incoreect value, 
+		/* Key is not present in RO or has incoreect value,
 			take default */
 		return dflt;
 	}
