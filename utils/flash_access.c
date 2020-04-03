@@ -93,7 +93,7 @@ inline int send_flash_cmd_write(u8 command, size_t cmd_len, const void *data,
 }
 
 /*******************************************************************************/
-void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
+void save_flash(u32 flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 	        u8 max_lines, u8 spi_wp_toggle) {
 	int i = 0;
 	int k = 0;
