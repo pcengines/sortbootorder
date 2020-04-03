@@ -64,7 +64,7 @@ static int fetch_file_from_cbfs(char *filename,
 				char destination[MAX_DEVICES][MAX_LENGTH],
 				u8 *line_count);
 static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
-			   u8 *line_count)
+			   u8 *line_count);
 static int get_line_number(u8 line_start, u8 line_end, char key);
 static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
 		    u8 lineDef_cnt );
