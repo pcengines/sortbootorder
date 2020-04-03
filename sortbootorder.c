@@ -63,6 +63,8 @@ static void copy_list_line(char *src, char *dest);
 static int fetch_file_from_cbfs(char *filename,
 				char destination[MAX_DEVICES][MAX_LENGTH],
 				u8 *line_count);
+static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
+			   u8 *line_count)
 static int get_line_number(u8 line_start, u8 line_end, char key);
 static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
 		    u8 lineDef_cnt );
@@ -76,7 +78,7 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines);
 static void refresh_tag_values(u8 max_lines);
 
 /*** local variables ***/
-static int flash_address;
+static void *flash_address;
 
 static u8 ipxe_toggle;
 static u8 usb_toggle;
@@ -107,6 +109,7 @@ static u8 uartd_toggle;
 
 static char bootlist_def[MAX_DEVICES][MAX_LENGTH];
 static char bootlist_map[MAX_DEVICES][MAX_LENGTH];
+static char bootorder_data[4096];
 static char id[MAX_DEVICES] = {0};
 
 static u8 device_toggle[MAX_DEVICES];
@@ -130,7 +133,6 @@ int main(void) {
 	u8 line_start = 0;
 	u8 line_number = 0;
 	char *token;
-	char *bootorder_data;
 	size_t cbfs_length;
 #ifndef COREBOOT_LEGACY
 	struct cbfs_handle *bootorder_handle;
@@ -173,16 +175,25 @@ int main(void) {
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 #else
 	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
-	flash_address = (int)tmp;
+	flash_address = (void *)tmp;
 	if ((u32)tmp & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 #endif
 
-
-	bootorder_data = (char *) cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, &cbfs_length );
-
 	// Get required files from CBFS
+#ifndef COREBOOT_LEGACY
+	if (fetch_bootorder(bootlist, &max_lines ) == -1) {
+		printf("Can't read bootorder!\n");
+		RESET();
+	}
+#else
 	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
+	memcpy(bootorder_data,
+	       cbfs_get_file_content(CBFS_DEFAULT_MEDIA,BOOTORDER_FILE,
+	       			     CBFS_TYPE_RAW, &cbfs_length ),
+	       4096);
+#endif
+
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
 	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
 
@@ -346,7 +357,7 @@ int main(void) {
 			case 's':
 			case 'S':
 				update_tags(bootlist, &max_lines);
-				save_flash(flash_address, bootlist, max_lines, spi_wp_toggle);
+				save_flash((int)flash_address, bootlist, max_lines, spi_wp_toggle);
 				// fall through to exit ...
 			case 'x':
 			case 'X':
@@ -486,6 +497,81 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(spi_wp_toggle) ? "Enabled" : "Disabled");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
+}
+
+
+static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
+			   u8 *line_count)
+{
+	char tmp;
+	int offset = 0, char_cnt = 0;
+	u32 bootorder_offset, bootorder_size;
+	struct cbfs_media default_media;
+	struct cbfs_media *media = &default_media;
+	char *bootorder_dat;
+
+	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
+
+	int rc = fmap_region_by_name(lib_sysinfo.fmap_offset, "BOOTORDER",
+				     &bootorder_offset, &bootorder_size);
+	if (rc == -1) {
+		fetch_file_from_cbfs(BOOTORDER_FILE, destination, line_count);
+		return;
+	}
+
+	flash_address = (void *)(rom_begin + bootorder_offset);
+	if ((u32)flash_address & 0xfff)
+		printf("Warning: The bootorder file is not 4k aligned!\n");
+
+
+	if (init_default_cbfs_media(media) != 0) {
+		return -1;
+	}
+
+	media->open(media);
+
+	if (!media->read(media, bootorder_data, bootorder_offset,
+			 bootorder_size)) {
+		return -1;
+	}
+	
+	media->close(media);
+
+	if (*bootorder_dat == 0xFF) {
+		printf("Error: bootorder is empty!\n");
+		return -1;
+	}
+
+	//count up the lines and display
+	*line_count = 0;
+	while (1) {
+		tmp = *(bootorder_data + offset++);
+		destination[*line_count][char_cnt] = tmp;
+		if (tmp == NEWLINE) {
+			(*line_count)++;
+			char_cnt = 0;
+		}
+		else if ((tmp == 0xFF) || (tmp == NUL) ||
+			 (offset > bootorder_size))
+			break;
+		else
+			char_cnt++;
+
+		if (*line_count > MAX_DEVICES) {
+			printf("aborting due to excessive line_count\n");
+			break;
+		}
+		if (char_cnt > MAX_LENGTH) {
+			printf("aborting due to excessive char count\n");
+			break;
+		}
+		if (offset > (MAX_LENGTH*MAX_DEVICES)) {
+			printf("aborting due to excessive cbfs ptr length\n");
+			break;
+		}
+	}
+
+	return 0;
 }
 
 /*******************************************************************************/
