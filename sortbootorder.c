@@ -357,7 +357,8 @@ int main(void) {
 			case 's':
 			case 'S':
 				update_tags(bootlist, &max_lines);
-				save_flash((int)flash_address, bootlist, max_lines, spi_wp_toggle);
+				save_flash(flash_address, bootlist, max_lines,
+					   spi_wp_toggle);
 				// fall through to exit ...
 			case 'x':
 			case 'X':
@@ -512,13 +513,19 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
+	prinft("SPI flash size: %x, rom begin %08x\n",
+		 lib_sysinfo.spi_flash.size, rom_begin);
+
 	int rc = fmap_region_by_name(lib_sysinfo.fmap_offset, "BOOTORDER",
 				     &bootorder_offset, &bootorder_size);
 	if (rc == -1) {
+		prinft("Fetching bootorder from FMAP failed, trying CBFS.\n");
 		fetch_file_from_cbfs(BOOTORDER_FILE, destination, line_count);
 		return;
 	}
 
+	prinft("bootorder offset: %08x, size %08x flash addr %08x\n",
+		 bootorder_offset, bootorder_size, (u32)flash_address);
 	flash_address = (void *)(rom_begin + bootorder_offset);
 	if ((u32)flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
