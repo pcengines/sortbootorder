@@ -134,9 +134,6 @@ int main(void) {
 	u8 line_number = 0;
 	char *token;
 	size_t cbfs_length;
-#ifndef COREBOOT_LEGACY
-	struct cbfs_handle *bootorder_handle;
-#endif
 
 	lib_get_sysinfo();
 
@@ -168,12 +165,7 @@ int main(void) {
 	}
 
 	// Find out where the bootorder file is in rom
-#ifndef COREBOOT_LEGACY
-	bootorder_handle = cbfs_get_handle( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE );
-	flash_address = bootorder_handle->media_offset + bootorder_handle->content_offset;
-	if ((u32)flash_address & 0xfff)
-		printf("Warning: The bootorder file is not 4k aligned!\n");
-#else
+#ifdef COREBOOT_LEGACY
 	char *tmp = cbfs_get_file_content( CBFS_DEFAULT_MEDIA, BOOTORDER_FILE, CBFS_TYPE_RAW, NULL );
 	flash_address = (void *)tmp;
 	if ((u32)tmp & 0xfff)
@@ -182,7 +174,7 @@ int main(void) {
 
 	// Get required files from CBFS
 #ifndef COREBOOT_LEGACY
-	if (fetch_bootorder(bootlist, &max_lines ) == -1) {
+	if (!fetch_bootorder(bootlist, &max_lines )) {
 		printf("Can't read bootorder!\n");
 		RESET();
 	}
@@ -509,7 +501,7 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 	u32 bootorder_offset, bootorder_size;
 	struct cbfs_media default_media;
 	struct cbfs_media *media = &default_media;
-	char *bootorder_dat;
+	struct cbfs_handle *bootorder_handle;
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
@@ -520,8 +512,16 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 				     &bootorder_offset, &bootorder_size);
 	if (rc == -1) {
 		prinft("Fetching bootorder from FMAP failed, trying CBFS.\n");
-		fetch_file_from_cbfs(BOOTORDER_FILE, destination, line_count);
-		return;
+		if (!fetch_file_from_cbfs(BOOTORDER_FILE, destination,
+					  line_count))
+			return -1;
+		bootorder_handle = cbfs_get_handle(CBFS_DEFAULT_MEDIA,
+						   BOOTORDER_FILE );
+		flash_address = (void *)(bootorder_handle->media_offset + 
+					 bootorder_handle->content_offset);
+		if ((u32)flash_address & 0xfff)
+			printf("Warning: The bootorder is not 4k aligned!\n");
+		return 0;
 	}
 
 	prinft("bootorder offset: %08x, size %08x flash addr %08x\n",
@@ -544,7 +544,7 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 	
 	media->close(media);
 
-	if (*bootorder_dat == 0xFF) {
+	if (*bootorder_data == 0xFF) {
 		printf("Error: bootorder is empty!\n");
 		return -1;
 	}
