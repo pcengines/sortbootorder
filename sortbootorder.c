@@ -133,7 +133,6 @@ int main(void) {
 	u8 line_start = 0;
 	u8 line_number = 0;
 	char *token;
-	size_t cbfs_length;
 
 	lib_get_sysinfo();
 
@@ -180,10 +179,6 @@ int main(void) {
 	}
 #else
 	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
-	memcpy(bootorder_data,
-	       cbfs_get_file_content(CBFS_DEFAULT_MEDIA,BOOTORDER_FILE,
-	       			     CBFS_TYPE_RAW, &cbfs_length ),
-	       4096);
 #endif
 
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
@@ -349,12 +344,12 @@ int main(void) {
 			case 's':
 			case 'S':
 				update_tags(bootlist, &max_lines);
-				save_flash(flash_address, bootlist, max_lines,
-					   spi_wp_toggle);
+				save_flash((u32)flash_address, bootlist,
+					   max_lines, spi_wp_toggle);
 				// fall through to exit ...
 			case 'x':
 			case 'X':
-				printf("\nExiting ...");
+				printf("\nExiting ...\n");
 				RESET();
 				break;
 			default:
@@ -502,16 +497,17 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 	struct cbfs_media default_media;
 	struct cbfs_media *media = &default_media;
 	struct cbfs_handle *bootorder_handle;
+	size_t cbfs_length;
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
-	prinft("SPI flash size: %x, rom begin %08x\n",
+	printf("SPI flash size: %x, rom begin %08x\n",
 		 lib_sysinfo.spi_flash.size, rom_begin);
 
 	int rc = fmap_region_by_name(lib_sysinfo.fmap_offset, "BOOTORDER",
 				     &bootorder_offset, &bootorder_size);
 	if (rc == -1) {
-		prinft("Fetching bootorder from FMAP failed, trying CBFS.\n");
+		printf("Fetching bootorder from FMAP failed, trying CBFS.\n");
 		if (!fetch_file_from_cbfs(BOOTORDER_FILE, destination,
 					  line_count))
 			return -1;
@@ -521,10 +517,16 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 					 bootorder_handle->content_offset);
 		if ((u32)flash_address & 0xfff)
 			printf("Warning: The bootorder is not 4k aligned!\n");
+
+		memcpy(bootorder_data,
+		       cbfs_get_file_content(CBFS_DEFAULT_MEDIA,
+					     BOOTORDER_FILE, CBFS_TYPE_RAW,
+					     &cbfs_length),
+		       4096);
 		return 0;
 	}
 
-	prinft("bootorder offset: %08x, size %08x flash addr %08x\n",
+	printf("bootorder offset: %08x, size %08x flash addr %08x\n",
 		 bootorder_offset, bootorder_size, (u32)flash_address);
 	flash_address = (void *)(rom_begin + bootorder_offset);
 	if ((u32)flash_address & 0xfff)
