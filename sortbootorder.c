@@ -225,11 +225,6 @@ int main(void) {
 			case 'w':
 			case 'W':
 				spi_wp_toggle ^= 0x1;
-				if (spi_wp_toggle)
-					lock_flash();
-				else
-					unlock_flash();
-				break;
 			case 'k':
 			case 'K':
 				if (com2_available)
@@ -288,8 +283,12 @@ int main(void) {
 #endif
 			case 's':
 			case 'S':
+				if (is_flash_locked())
+					unlock_flash();
 				update_tags(bootlist, &max_lines);
 				save_flash(flash_address, bootlist, max_lines);
+				if (spi_wp_toggle)
+					lock_flash();
 				// fall through to exit ...
 			case 'x':
 			case 'X':
