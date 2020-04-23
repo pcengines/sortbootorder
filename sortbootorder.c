@@ -248,6 +248,10 @@ int main(void) {
 			case 'L':
 				boost_toggle ^= 0x1;
 				break;
+			case 'm':
+			case 'M':
+				mpcie2_clk_toggle ^= 0x1;
+				break;
 			case 'i':
 			case 'I':
 				; // empty statement to avoid compilation error
@@ -591,8 +595,7 @@ static vpd_err_t checkKeyName(const u8 *name) {
 	unsigned char c;
 	while ((c = *name++)) {
 		if (!(isalnum(c) || c == '_' || c == '.')) {
-			fprintf(stderr, "[ERROR] VPD key name does not allow"
-					" char [%c].\n", c);
+			printf("VPD key name does not allow char [%c]0.\n", c);
 			return VPD_ERR_PARAM;
 		}
 	}
