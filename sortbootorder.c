@@ -222,6 +222,11 @@ int main(void) {
 			case 'U':
 				usb_toggle ^= 0x1;
 				break;
+			case 'w':
+			case 'W':
+				spi_wp_toggle ^= 0x1;
+				lock_flash();
+				break;
 			case 'k':
 			case 'K':
 				if (com2_available)
