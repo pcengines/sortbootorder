@@ -634,14 +634,14 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 {
 
 	char tmp;
-	u32 vpd_offset, vpd_size;
+	u32 vpd_offset, vpd_size, index;
 	u8 *vpd_buf;
+	int retval, vpd_address;
 	struct PairContainer vpd_content;
 	struct PairContainer set_argument;
-	int retval;
 	struct google_vpd_info *info;
-	u32 index;
-	int vpd_address;
+	struct cbfs_media default_media;
+	struct cbfs_media *media = &default_media;
 	u8 knob_value[50];
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
@@ -664,7 +664,19 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	if(!vpd_buf)
 		return -1;
 
-	memcpy(vpd_buf, vpd_address, vpd_size);
+	if (init_default_cbfs_media(media) != 0) {
+		free(vpd_buf);
+		return -1;
+	}
+
+	media->open(media);
+
+	if (!media->read(media, vpd_buf, vpd_offset, vpd_size)) {
+		retval = -1;
+		goto teardown;
+	}
+
+	media->close(media);
 
 	tmp = *vpd_buf;
 	if (tmp == 0xFF) {
