@@ -22,9 +22,10 @@
 #include <flash_access.h>
 #include <sec_reg_menu.h>
 #include <spi/spi_lock_menu.h>
-#include <utils/lib_vpd.h>
-#include <utils/vpd_tables.h>
-#include <utils/vpd.h>
+
+#include "utils/lib_vpd.h"
+#include "utils/vpd_tables.h"
+#include "utils/vpd.h"
 #include "version.h"
 
 /*** defines ***/
