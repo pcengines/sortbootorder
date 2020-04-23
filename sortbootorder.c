@@ -22,10 +22,9 @@
 #include <flash_access.h>
 #include <sec_reg_menu.h>
 #include <spi/spi_lock_menu.h>
-
-#include "utils/lib_vpd.h"
-#include "utils/vpd_tables.h"
-#include "utils/vpd.h"
+#include <utils/lib_vpd.h>
+#include <utils/vpd_tables.h>
+#include <utils/vpd.h>
 #include "version.h"
 
 /*** defines ***/
@@ -341,7 +340,6 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 {
 	int i,j,y,unique;
 	char print_device[MAX_LENGTH];
-	//u8 usb_status = is_tag_enabled("usben");
 
 	device_toggle[USB_1]  = usb_toggle;
 	device_toggle[USB_2]  = usb_toggle;
@@ -561,7 +559,6 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 	return 0;
 }
 
-
 /*******************************************************************************/
 static void move_boot_list(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line,
 			   u8 max_lines )
@@ -590,14 +587,15 @@ static void move_boot_list(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line,
 }
 
 static vpd_err_t checkKeyName(const u8 *name) {
-  unsigned char c;
-  while ((c = *name++)) {
-    if (!(isalnum(c) || c == '_' || c == '.')) {
-      fprintf(stderr, "[ERROR] VPD key name does not allow char [%c].\n", c);
-      return VPD_ERR_PARAM;
-    }
-  }
-  return VPD_OK;
+	unsigned char c;
+	while ((c = *name++)) {
+		if (!(isalnum(c) || c == '_' || c == '.')) {
+			fprintf(stderr, "[ERROR] VPD key name does not allow"
+					" char [%c].\n", c);
+			return VPD_ERR_PARAM;
+		}
+	}
+	return VPD_OK;
 }
 
 static vpd_err_t parseString(const u8 *string, 
@@ -613,10 +611,10 @@ static vpd_err_t parseString(const u8 *string,
 	}
 
 	/*
-	* Goes through the key string, and stops at the first '='.
-	* If '=' is not found, the whole string is the key and
-	* the value points to the end of string ('\0').
-	*/
+	 * Goes through the key string, and stops at the first '='.
+	 * If '=' is not found, the whole string is the key and
+	 * the value points to the end of string ('\0').
+	 */
 	for (value = key; *value && *value != '='; value++);
 	if (*value == '=') {
 		*(value++) = '\0';
@@ -647,8 +645,7 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
-	int rc = fmap_region_by_name("RW_VPD", &vpd_offset,
-				     &vpd_size);
+	int rc = fmap_region_by_name("RW_VPD", &vpd_offset, &vpd_size);
 	if (rc == -1) {
 		printf("Error: RW_VPD not found!\n");
 		return 1;
@@ -666,7 +663,7 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	if(!vpd_buf)
 		return -1;
 
-	read_vpd(vpd_address, vpd_size, vpd_buf);
+	memcpy(vpd_buf, vpd_address, vpd_size);
 
 	tmp = *vpd_buf;
 	if (tmp == 0xFF) {
@@ -683,12 +680,6 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	}
 
 	index = 0x600 + sizeof(struct google_vpd_info); /* offset to VPD data */
-
-	/* Debug output. Remove in final version. */
-	// printf("vpd_address = %x\n", vpd_address);
-	// printf("index = %x\n", index);
-	// printf("vpd_size = %x\n", vpd_size);
-
 	for ( ;
 		vpd_buf[index] != VPD_TYPE_TERMINATOR &&
 		vpd_buf[index] != VPD_TYPE_IMPLICIT_TERMINATOR; ) {
@@ -834,10 +825,9 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 			break;
 
 		/* index MUST eventually meet 0x5b value*/
-
 		char *str = (char*)header + header->length;
 		int length = sizeof(struct vpd_header) +
-               sizeof(struct vpd_table_binary_blob_pointer);
+			     sizeof(struct vpd_table_binary_blob_pointer);
 
 		/* Four variant-length strings are following header. */
 		int i = 0;
@@ -856,15 +846,11 @@ static int update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 		tries++;
 		if (tries > 100) {
 			retval = -1;
-			printf("tries > 100 --> goto teardow\n");
 			goto teardown;
 		}
 	}
 
 	data->size = info->size + sizeof(*info);
-
-	/* hexdump for debugging, remove later */
-	//hexdump(vpd_buf, vpd_size);
 	save_vpd(vpd_address, vpd_size, vpd_buf);
 
 teardown:

@@ -39,5 +39,4 @@ int send_flash_cmd_write(u8 command, size_t cmd_len, const void *data,
 			 size_t data_len);
 void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH], u8 max_lines);
 void save_vpd(int vpd_offset, size_t vpd_size, u8 *buffer);
-void read_vpd(int vpd_offset, size_t vpd_size, u8 *buffer);
 #endif
