@@ -225,7 +225,10 @@ int main(void) {
 			case 'w':
 			case 'W':
 				spi_wp_toggle ^= 0x1;
-				lock_flash();
+				if (spi_wp_toggle)
+					lock_flash();
+				else
+					unlock_flash();
 				break;
 			case 'k':
 			case 'K':
