@@ -186,7 +186,7 @@ int main(void) {
 	uartd_toggle = is_tag_enabled("uartd", VPD_ANY, 0);
 #ifndef TARGET_APU1
 	ehci0_toggle = is_tag_enabled("ehcien", VPD_ANY, 0);
-	mpcie2_clk_toggle = is_tag_enabled("mpcie2_clk", VPD_ANY, 0);
+	mpcie2_clk_toggle = is_tag_enabled("mpcie2clk", VPD_ANY, 0);
 	boost_toggle = is_tag_enabled("boosten", VPD_ANY, 1);
 	sd3_toggle = is_tag_enabled("sd3mode", VPD_ANY, 0);
 #ifndef COREBOOT_LEGACY
@@ -883,7 +883,7 @@ static void refresh_tag_values(u8 max_lines)
 	uartd_toggle = is_tag_enabled("uartd", VPD_RO, 0);
 #ifndef TARGET_APU1
 	ehci0_toggle = is_tag_enabled("ehcien", VPD_RO, 0);
-	mpcie2_clk_toggle = is_tag_enabled("mpcie2_clk", VPD_RO, 0);
+	mpcie2_clk_toggle = is_tag_enabled("mpcie2clk", VPD_RO, 0);
 	boost_toggle = is_tag_enabled("boosten", VPD_RO, 1);
 	sd3_toggle = is_tag_enabled("sd3mode", VPD_RO, 0);
 #ifndef COREBOOT_LEGACY
