@@ -101,6 +101,8 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 	char cbfs_formatted_list[MAX_DEVICES * MAX_LENGTH];
 	u32 nvram_pos;
 
+	int flash_lock = is_flash_locked();
+
 	// compact the table into the expected packed list
 	for (j = 0; j < max_lines; j++) {
 		for (k = 0; k < MAX_LENGTH; k++) {
@@ -111,9 +113,8 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 	}
 	cbfs_formatted_list[i++] = NUL;
 
-	if (is_flash_locked())
-		printf("WARNING: SPI flash lock is enabled."
-			" Saving configuration may fail.\n");
+	if (flash_lock)
+		unlock_flash();
 
 	printf("Updating bootorder...\n");
 
@@ -141,16 +142,23 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 		return;
 	}
 
+	if (flash_lock) {
+		lock_flash();
+
 	printf("Done\n");
 }
 
 void save_vpd(int vpd_offset, size_t vpd_size, u8 *buffer)
 {
 	int ret;
+	int flash_lock = is_flash_locked();
 
-	if (is_flash_locked())
+	if (flash_lock) {
 		printf("WARNING: SPI flash lock is enabled."
 			" Saving configuration may fail.\n");
+		pritnf("Unlocking flash...\n");
+		unlock_flash();
+	}
 
 	printf("Updating VPD...\n");
 
@@ -167,6 +175,9 @@ void save_vpd(int vpd_offset, size_t vpd_size, u8 *buffer)
 		printf("Write failed, ret: %d\n", ret);
 		return;
 	}
+
+	if (flash_lock) {
+		lock_flash();
 
 	printf("Done\n");
 }
