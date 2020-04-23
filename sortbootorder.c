@@ -193,7 +193,7 @@ int main(void) {
 	iommu_toggle = is_tag_enabled("iommu", VPD_ANY, 0);
 #endif
 	int wdg_size;
-	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_RO),
+	wdg_timeout = (u16) strtoul(vpd_find("watchdog", &wdg_size, VPD_ANY),
 				    NULL, 10);
 #endif
 
@@ -258,6 +258,7 @@ int main(void) {
 				char *prompt = readline("Specify the watchdog"
 					" timeout in seconds (0 to disable): ");
 				wdg_timeout = (u16) strtoul(prompt, NULL, 10);
+				printf("Watchdog timeout will be set to %u seconds\n", wdg_timeout);
 				prompt[0] = '\0';
 				break;
 			case 'j':
