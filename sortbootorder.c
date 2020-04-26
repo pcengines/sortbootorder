@@ -95,6 +95,7 @@ static u8 boost_toggle;
 static u8 sd3_toggle;
 #ifndef COREBOOT_LEGACY
 static u8 iommu_toggle;
+static u8 pciepm_toggle;
 #endif
 static u16 wdg_timeout;
 #endif
@@ -221,6 +222,10 @@ int main(void) {
 	token = strstr(bootorder_data, "iommu");
 	token += strlen("iommu");
 	iommu_toggle = token ? strtoul(token, NULL, 10) : 0;
+
+	token = strstr(bootorder_data, "pciepm");
+	token += strlen("pciepm");
+	pciepm_toggle = token ? strtoul(token, NULL, 10) : 0;
 #endif
 	token = strstr(bootorder_data, "watchdog");
 	token += strlen("watchdog");
@@ -310,6 +315,10 @@ int main(void) {
 			case 'v':
 			case 'V':
 				iommu_toggle ^= 0x1;
+				break;
+			case 'u':
+			case 'U':
+				pciepm_toggle ^= 0x1;
 				break;
 #endif
 			case 'Q':
@@ -451,6 +460,8 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 #ifndef COREBOOT_LEGACY
 	printf("  v IOMMU - Currently %s\n",
 		(iommu_toggle) ? "Enabled" : "Disabled");
+	printf("  u PCIe power management features - Currently %s\n",
+		(pciepm_toggle) ? "Enabled" : "Disabled");
 #endif
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n",
@@ -626,6 +637,7 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle + '0');
 #ifndef COREBOOT_LEGACY
 	update_tag_value(bootlist, max_lines, "iommu", iommu_toggle + '0');
+	update_tag_value(bootlist, max_lines, "pciepm", pciepm_toggle + '0');
 #endif
 	update_wdg_timeout(bootlist, max_lines, wdg_timeout);
 #endif
@@ -698,6 +710,11 @@ static void refresh_tag_values(u8 max_lines)
 		if(token) {
 			token += strlen("iommu");
 			iommu_toggle = strtoul(token, NULL, 10);
+		}
+		token = strstr(&(bootlist_def[i][0]), "pciepm");
+		if(token) {
+			token += strlen("pciepm");
+			pciepm_toggle = strtoul(token, NULL, 10);
 		}
 #endif
 		token = strstr(&(bootlist_def[i][0]), "watchdog");
