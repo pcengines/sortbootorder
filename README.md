@@ -6,25 +6,7 @@ saves boot order in flash.
 
 ## Contents
 
-<!-- TOC -->
-
-- [Sortbootorder](#sortbootorder)
-- [Contents](#contents)
-- [Theory of operation](#theory-of-operation)
-  - [Example menu view](#example-menu-view)
-  - [Settings description](#settings-description)
-  - [bootorder file](#bootorder-file)
-  - [bootorder_map file](#bootorder_map-file)
-  - [Default settings](#default-settings)
-  - [BIOS WP option](#bios-wp-option)
-  - [Hidden security registers menu](#hidden-security-registers-menu)
-    - [Example](#example)
-- [Building](#building)
-  - [Manual build](#manual-build)
-  - [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)
-  - [Recent automated building process](#recent-automated-building-process)
-
-<!-- /TOC -->
+<!-- TOC -->autoauto- [Contents](#contents)auto- [Theory of operation](#theory-of-operation)auto	- [Example menu view](#example-menu-view)auto	- [Settings description](#settings-description)auto	- [bootorder file](#bootorder-file)auto	- [bootorder_map file](#bootorder_map-file)auto	- [Default settings](#default-settings)auto	- [BIOS WP option](#bios-wp-option)auto	- [Hidden security registers menu](#hidden-security-registers-menu)auto		- [Example](#example)auto	- [Hidden flash lockdown menu](#hidden-flash-lockdown-menu)auto		- [Example](#example-1)auto- [Building](#building)auto	- [Manual build](#manual-build)auto	- [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)auto	- [Recent automated building process](#recent-automated-building-process)autoauto<!-- /TOC -->
 
 ## Theory of operation
 
@@ -52,6 +34,7 @@ saves boot order in flash.
   h EHCI0 controller - Currently Disabled
   l Core Performance Boost - Currently Enabled
   v IOMMU - Currently Disabled
+  u PCIe power management features - Currently Disabled
   w Enable BIOS write protect - Currently Disabled
   x Exit setup without save
   s Save configuration and exit
@@ -92,6 +75,11 @@ key.
 * `j SD 3.0 mode` - enable SD controller in 3.0 mode to allow achieving full
   speeds with UHS-I SD cards
 * `v IOMMU` - enables/disables input–output memory management unit
+* `u PCIe power management features` - enables/disables PCI Express power
+  management features like: ASPM, Common Clock, Clock Power Management (if
+  supported by PCI Express endpoints). **Enabling this option will reduce the**
+  **power consumption at the cost of performance drop of Ethenet controllers**
+  **and WiFi cards**
 * `w Enable BIOS write protect` - enables/disables BIOS WP functionality. For
   details, see descritption in [BIOS WP option](#bios-wp-option).
 * `x Exit setup without save` - exits setup menu without saving the settings
@@ -174,6 +162,7 @@ file is used to match device letter and description with corresponding node from
   Watchdog - Disabled
   SD 3.0 mode - Disabled
   IOMMU - Disabled
+  PCIe power management features - Disabled
   Redirect console output to COM2 - Disabled
   BIOS write protect - Disabled
   ```
