@@ -316,8 +316,8 @@ int main(void) {
 			case 'V':
 				iommu_toggle ^= 0x1;
 				break;
-			case 'u':
-			case 'U':
+			case 'y':
+			case 'Y':
 				pciepm_toggle ^= 0x1;
 				break;
 #endif
@@ -460,7 +460,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 #ifndef COREBOOT_LEGACY
 	printf("  v IOMMU - Currently %s\n",
 		(iommu_toggle) ? "Enabled" : "Disabled");
-	printf("  u PCIe power management features - Currently %s\n",
+	printf("  y PCIe power management features - Currently %s\n",
 		(pciepm_toggle) ? "Enabled" : "Disabled");
 #endif
 #endif
