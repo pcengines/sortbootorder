@@ -6,7 +6,23 @@ saves boot order in flash.
 
 ## Contents
 
-<!-- TOC -->autoauto- [Contents](#contents)auto- [Theory of operation](#theory-of-operation)auto	- [Example menu view](#example-menu-view)auto	- [Settings description](#settings-description)auto	- [bootorder file](#bootorder-file)auto	- [bootorder_map file](#bootorder_map-file)auto	- [Default settings](#default-settings)auto	- [BIOS WP option](#bios-wp-option)auto	- [Hidden security registers menu](#hidden-security-registers-menu)auto		- [Example](#example)auto	- [Hidden flash lockdown menu](#hidden-flash-lockdown-menu)auto		- [Example](#example-1)auto- [Building](#building)auto	- [Manual build](#manual-build)auto	- [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)auto	- [Recent automated building process](#recent-automated-building-process)autoauto<!-- /TOC -->
+- [Sortbootorder](#sortbootorder)
+- [Contents](#contents)
+- [Theory of operation](#theory-of-operation)
+  - [Example menu view](#example-menu-view)
+  - [Settings description](#settings-description)
+  - [bootorder file](#bootorder-file)
+  - [bootorder_map file](#bootorder_map-file)
+  - [Default settings](#default-settings)
+  - [BIOS WP option](#bios-wp-option)
+  - [Hidden security registers menu](#hidden-security-registers-menu)
+    - [Example](#example)
+  - [Hidden flash lockdown menu](#hidden-flash-lockdown-menu)
+    - [Example](#example-1)
+- [Building](#building)
+  - [Manual build](#manual-build)
+  - [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)
+  - [Recent automated building process](#recent-automated-building-process)
 
 ## Theory of operation
 
