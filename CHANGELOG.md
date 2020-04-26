@@ -7,6 +7,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.6.18] - 2020-04-26
+### Added
+- PCI Express power management features runtime configuration
+
 ## [v4.6.17] - 2020-01-28
 ### Changed
 - disabled PS2 keyboard and mouse by default, not supported on apu platforms
