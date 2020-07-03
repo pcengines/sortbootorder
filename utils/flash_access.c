@@ -113,10 +113,13 @@ void save_flash(int flash_address, char buffer[MAX_DEVICES][MAX_LENGTH],
 
 	// try to unlock the flash if it is locked
 	if (spi_flash_is_locked(flash_device)) {
+		printf("Flash is locked, trying to unlock...\n");
 		spi_flash_unlock(flash_device);
 		if (spi_flash_is_locked(flash_device)) {
 			printf("Flash is write protected. Exiting...\n");
 			return;
+		} else {
+			printf("Flash unlocked successfully.\n");
 		}
 	}
 
