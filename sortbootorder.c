@@ -93,6 +93,7 @@ static u8 ehci0_toggle;
 static u8 mpcie2_clk_toggle;
 static u8 boost_toggle;
 static u8 sd3_toggle;
+static u8 pciereverse_toggle;
 #ifndef COREBOOT_LEGACY
 static u8 iommu_toggle;
 static u8 pciepm_toggle;
@@ -218,6 +219,11 @@ int main(void) {
 	token = strstr(bootorder_data, "sd3mode");
 	token += strlen("sd3mode");
 	sd3_toggle = token ? strtoul(token, NULL, 10) : 0;
+
+	token = strstr(bootorder_data, "pciereverse");
+	token += strlen("pciereverse");
+	pciereverse_toggle = token ? strtoul(token, NULL, 10) : 0;
+
 #ifndef COREBOOT_LEGACY
 	token = strstr(bootorder_data, "iommu");
 	token += strlen("iommu");
@@ -310,6 +316,10 @@ int main(void) {
 			case 'j':
 			case 'J':
 				sd3_toggle ^= 0x1;
+				break;
+			case 'g':
+			case 'G':
+				pciereverse_toggle ^= 0x1;
 				break;
 #ifndef COREBOOT_LEGACY
 			case 'v':
@@ -457,6 +467,9 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(wdg_timeout) ? "Enabled" : "Disabled");
 	printf("  j SD 3.0 mode - Currently %s\n",
 		(sd3_toggle) ? "Enabled" : "Disabled");
+	printf("  g Reverse order of PCI addresses - Currently %s\n",
+		(pciereverse_toggle) ? "Enabled" : "Disabled");
+		
 #ifndef COREBOOT_LEGACY
 	printf("  v IOMMU - Currently %s\n",
 		(iommu_toggle) ? "Enabled" : "Disabled");
@@ -635,6 +648,7 @@ static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 	update_tag_value(bootlist, max_lines, "ehcien", ehci0_toggle + '0');
 	update_tag_value(bootlist, max_lines, "boosten", boost_toggle + '0');
 	update_tag_value(bootlist, max_lines, "sd3mode", sd3_toggle + '0');
+	update_tag_value(bootlist, max_lines, "pciereverse", pciereverse_toggle + '0');
 #ifndef COREBOOT_LEGACY
 	update_tag_value(bootlist, max_lines, "iommu", iommu_toggle + '0');
 	update_tag_value(bootlist, max_lines, "pciepm", pciepm_toggle + '0');
@@ -704,6 +718,10 @@ static void refresh_tag_values(u8 max_lines)
 		if(token) {
 			token += strlen("sd3mode");
 			sd3_toggle = strtoul(token, NULL, 10);
+		}
+		if(token) {
+			token += strlen("pciereverse");
+			pciereverse_toggle = strtoul(token, NULL, 10);
 		}
 #ifndef COREBOOT_LEGACY
 		token = strstr(&(bootlist_def[i][0]), "iommu");
