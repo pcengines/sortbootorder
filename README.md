@@ -90,6 +90,10 @@ key.
   **watchdog later. Too low value may result in a reset loop!**
 * `j SD 3.0 mode` - enable SD controller in 3.0 mode to allow achieving full
   speeds with UHS-I SD cards
+* `g Reverse order of PCI addresses` - When enabled, the PCIe devices are
+ordered as follows: NICs, mPCIe1, mPCIe2. In such way the PCI enumeration is
+permanent for NICs regardless of mPCIe WiFi module presence or faulty detection.
+More information in [documentation](https://github.com/pcengines/apu2-documentation/blob/master/docs/order_of_PCI_addresses.md)
 * `v IOMMU` - enables/disables input–output memory management unit
 * `u PCIe power management features` - enables/disables PCI Express power
   management features like: ASPM, Common Clock, Clock Power Management (if
