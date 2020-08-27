@@ -7,6 +7,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.6.20] - 2020-08-27
+### Fixed
+- minor build fix for mainline coreboot
+
 ## [v4.6.19] - 2020-07-29
 ### Added
 - new option in menu to allow reverse PCI addressing order
@@ -196,7 +200,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.19...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.20...master
+[v4.6.20]: https://github.com/pcengines/sortbootorder/compare/v4.6.19...v4.6.20
 [v4.6.19]: https://github.com/pcengines/sortbootorder/compare/v4.6.18...v4.6.19
 [v4.6.18]: https://github.com/pcengines/sortbootorder/compare/v4.6.17...v4.6.18
 [v4.6.17]: https://github.com/pcengines/sortbootorder/compare/v4.6.16...v4.6.17
