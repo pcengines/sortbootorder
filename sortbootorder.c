@@ -18,6 +18,7 @@
 
 #include <libpayload.h>
 #include <cbfs.h>
+#include <coreboot_tables.h>
 #include <curses.h>
 #include <flash_access.h>
 #include <sec_reg_menu.h>
@@ -149,8 +150,8 @@ int main(void) {
 	noecho(); /* don't echo keystrokes */
 #endif
 #ifndef COREBOOT_LEGACY
-	u8 *apu_id_string = lib_sysinfo.cb_mainboard->strings +
-			    lib_sysinfo.cb_mainboard->part_number_idx;
+	struct cb_mainboard* board = (struct cb_mainboard *)lib_sysinfo.cb_mainboard;
+	u8 *apu_id_string = board->strings + board->part_number_idx;
 #else
 	u8 *apu_id_string = lib_sysinfo.mainboard->strings +
 			    lib_sysinfo.mainboard->part_number_idx;
