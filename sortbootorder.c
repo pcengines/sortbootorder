@@ -148,9 +148,13 @@ int main(void) {
 	usb_initialize();
 	noecho(); /* don't echo keystrokes */
 #endif
-
+#ifndef COREBOOT_LEGACY
+	u8 *apu_id_string = lib_sysinfo.cb_mainboard->strings +
+			    lib_sysinfo.cb_mainboard->part_number_idx;
+#else
 	u8 *apu_id_string = lib_sysinfo.mainboard->strings +
 			    lib_sysinfo.mainboard->part_number_idx;
+#endif
 	printf("\n### PC Engines %s setup %s ###\n", apu_id_string,
 		SORTBOOTORDER_VER);
 
