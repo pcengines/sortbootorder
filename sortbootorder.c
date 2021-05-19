@@ -63,8 +63,10 @@ static void copy_list_line(char *src, char *dest);
 static int fetch_file_from_cbfs(char *filename,
 				char destination[MAX_DEVICES][MAX_LENGTH],
 				u8 *line_count);
+#ifndef COREBOOT_LEGACY
 static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 			   u8 *line_count);
+#endif
 static int get_line_number(u8 line_start, u8 line_end, char key);
 static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
 		    u8 lineDef_cnt );
@@ -487,7 +489,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	printf("  s Save configuration and exit\n");
 }
 
-
+#ifndef COREBOOT_LEGACY
 static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 			   u8 *line_count)
 {
@@ -577,6 +579,7 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 
 	return 0;
 }
+#endif
 
 /*******************************************************************************/
 static void int_ids(char buffer[MAX_DEVICES][MAX_LENGTH], u8 line_cnt,
