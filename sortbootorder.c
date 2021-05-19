@@ -181,6 +181,7 @@ int main(void) {
 	}
 #else
 	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
+	memcpy(bootorder_data, flash_address, 4096);
 #endif
 
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
