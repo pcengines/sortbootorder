@@ -171,17 +171,15 @@ int main(void) {
 	flash_address = (void *)tmp;
 	if ((u32)tmp & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
-#endif
 
-	// Get required files from CBFS
-#ifndef COREBOOT_LEGACY
+	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
+	memcpy(bootorder_data, flash_address, 4096);
+#else
+
 	if (fetch_bootorder(bootlist, &max_lines )) {
 		printf("Can't read bootorder!\n");
 		RESET();
 	}
-#else
-	fetch_file_from_cbfs( BOOTORDER_FILE, bootlist, &max_lines );
-	memcpy(bootorder_data, flash_address, 4096);
 #endif
 
 	fetch_file_from_cbfs( BOOTORDER_DEF, bootlist_def, &bootlist_def_ln );
@@ -497,8 +495,6 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 	char tmp;
 	int offset = 0, char_cnt = 0;
 	u32 bootorder_offset, bootorder_size;
-	struct cbfs_media default_media;
-	struct cbfs_media *media = &default_media;
 	struct cbfs_handle *bootorder_handle;
 	size_t cbfs_length;
 
@@ -515,36 +511,21 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 						   BOOTORDER_FILE );
 		flash_address = (void *)(bootorder_handle->media_offset + 
 					 bootorder_handle->content_offset);
-		if ((u32)flash_address & 0xfff)
-			printf("Warning: The bootorder is not 4k aligned!\n");
 
 		memcpy(bootorder_data,
 		       cbfs_get_file_content(CBFS_DEFAULT_MEDIA,
 					     BOOTORDER_FILE, CBFS_TYPE_RAW,
 					     &cbfs_length),
-		       4096);
-		return 0;
+			4096);
+	} else {
+		flash_address = (void *)(rom_begin + bootorder_offset);
+		memcpy(bootorder_data, flash_address, bootorder_size);
 	}
 
-	flash_address = (void *)(rom_begin + bootorder_offset);
 	if ((u32)flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 
-
-	if (init_default_cbfs_media(media) != 0) {
-		return -1;
-	}
-
-	media->open(media);
-
-	if (!media->read(media, bootorder_data, bootorder_offset,
-			 bootorder_size)) {
-		return -1;
-	}
-	
-	media->close(media);
-
-	if (*bootorder_data == 0xFF) {
+	if (*bootorder_data == 0xFF || *bootorder_data == 0x00) {
 		printf("Error: bootorder is empty!\n");
 		return -1;
 	}
