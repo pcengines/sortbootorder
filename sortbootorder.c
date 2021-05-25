@@ -498,19 +498,19 @@ static int fetch_bootorder_from_cbfs(char destination[MAX_DEVICES][MAX_LENGTH],
 	struct cbfs_handle *bootorder_handle;
 	size_t cbfs_length;
 
-	bootorder_handle = cbfs_get_handle(CBFS_DEFAULT_MEDIA,
-					BOOTORDER_FILE );
+	bootorder_handle = cbfs_get_handle(CBFS_DEFAULT_MEDIA, BOOTORDER_FILE);
+
 	flash_address = (void *)(bootorder_handle->media_offset + 
-				bootorder_handle->content_offset);
+				 bootorder_handle->content_offset);
+
 	if ((u32)flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 
-	cbfs_dat = cbfs_get_file_content(CBFS_DEFAULT_MEDIA,
-					BOOTORDER_FILE, CBFS_TYPE_RAW,
-					&cbfs_length);
+	cbfs_dat = cbfs_get_file_content(CBFS_DEFAULT_MEDIA, BOOTORDER_FILE,
+					 CBFS_TYPE_RAW,	&cbfs_length);
 
 	if (!cbfs_dat) {
-		printf("Error: file [%s] not found!\n", filename);
+		printf("Error: file [%s] not found!\n", BOOTORDER_FILE);
 		return -1;
 	}
 	if (*bootorder_data == 0xFF || *bootorder_data == 0x00) {
@@ -529,11 +529,8 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 			   u8 *line_count)
 {
 	char tmp;
-	char *cbfs_dat;
 	int offset = 0, char_cnt = 0;
 	u32 bootorder_offset, bootorder_size;
-	struct cbfs_handle *bootorder_handle;
-	size_t cbfs_length;
 
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
