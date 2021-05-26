@@ -44,8 +44,8 @@ saves boot order in flash.
   u USB boot - Currently Enabled
   t Serial console - Currently Enabled
   k Redirect console output to COM2 - Currently Disabled
-  o UART C - Currently Enabled
-  p UART D - Currently Enabled
+  o UART C - Currently Enabled - Toggle UART C / GPIO
+  p UART D - Currently Enabled - Toggle UART D / GPIO
   m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently Disabled
   h EHCI0 controller - Currently Disabled
   l Core Performance Boost - Currently Enabled
@@ -72,10 +72,10 @@ key.
 * `t Serial console` - enables/disables output to the serial console
   Useful for legacy software, which is not using native serial port output, but
   uses standard PC text console instead (eg. FreeDOS).
-* `o UART C` - enables/disables UART C on GPIO header. Disabled UART means
-  enabled GPIO.
-* `p UART D` - enables/disables UART D on GPIO header. Disabled UART means
-     enabled GPIO.
+* `o UART C` - enables/disables UART C on GPIO header. Disabled UART C means
+  enabled GPIO[0..7].
+* `p UART D` - enables/disables UART D on GPIO header. Disabled UART D means
+     enabled GPIO[10..17].
 * `m Force mPCIe2 slot CLK (GPP3 PCIe)` - enabling this option forces GPP3 PCIe
   clock (which is attached to mPCIe2 slot) to be always on. This helps in some
   cases, one example could be
@@ -257,27 +257,27 @@ in the main menu. Option description:
 ```
 > p
  1) Protected range 000000h – 000000h (currently enabled)
- 2) Protected range 7E0000h – 7FFFFFh 
- 3) Protected range 7C0000h – 7FFFFFh 
- 4) Protected range 780000h – 7FFFFFh 
- 5) Protected range 700000h – 7FFFFFh 
- 6) Protected range 600000h – 7FFFFFh 
- 7) Protected range 400000h – 7FFFFFh 
- 8) Protected range  000000h – 01FFFFh 
- 9) Protected range  000000h – 03FFFFh 
-10) Protected range  000000h – 07FFFFh 
-11) Protected range  000000h – 0FFFFFh 
-12) Protected range  000000h – 1FFFFFh 
-13) Protected range  000000h – 3FFFFFh 
-14) Protected range  000000h – 7FFFFFh 
-15) Protected range  7FF000h – 7FFFFFh 
-16) Protected range  7FE000h – 7FFFFFh 
-17) Protected range  7FC000h – 7FFFFFh 
-18) Protected range  7F8000h – 7FFFFFh 
-19) Protected range  000000h – 000FFFh 
-20) Protected range  000000h – 001FFFh 
-21) Protected range  000000h – 003FFFh 
-22) Protected range  000000h – 007FFFh 
+ 2) Protected range 7E0000h – 7FFFFFh
+ 3) Protected range 7C0000h – 7FFFFFh
+ 4) Protected range 780000h – 7FFFFFh
+ 5) Protected range 700000h – 7FFFFFh
+ 6) Protected range 600000h – 7FFFFFh
+ 7) Protected range 400000h – 7FFFFFh
+ 8) Protected range  000000h – 01FFFFh
+ 9) Protected range  000000h – 03FFFFh
+10) Protected range  000000h – 07FFFFh
+11) Protected range  000000h – 0FFFFFh
+12) Protected range  000000h – 1FFFFFh
+13) Protected range  000000h – 3FFFFFh
+14) Protected range  000000h – 7FFFFFh
+15) Protected range  7FF000h – 7FFFFFh
+16) Protected range  7FE000h – 7FFFFFh
+17) Protected range  7FC000h – 7FFFFFh
+18) Protected range  7F8000h – 7FFFFFh
+19) Protected range  000000h – 000FFFh
+20) Protected range  000000h – 001FFFh
+21) Protected range  000000h – 003FFFh
+22) Protected range  000000h – 007FFFh
 
 ...
 > s
@@ -293,28 +293,28 @@ SRP0=0 , SRP1=0, WP=?
 > b 5
 Setting block protection success!
 > p
- 1) Protected range 000000h – 000000h 
- 2) Protected range 7E0000h – 7FFFFFh 
- 3) Protected range 7C0000h – 7FFFFFh 
- 4) Protected range 780000h – 7FFFFFh 
+ 1) Protected range 000000h – 000000h
+ 2) Protected range 7E0000h – 7FFFFFh
+ 3) Protected range 7C0000h – 7FFFFFh
+ 4) Protected range 780000h – 7FFFFFh
  5) Protected range 700000h – 7FFFFFh (currently enabled)
- 6) Protected range 600000h – 7FFFFFh 
- 7) Protected range 400000h – 7FFFFFh 
- 8) Protected range  000000h – 01FFFFh 
- 9) Protected range  000000h – 03FFFFh 
-10) Protected range  000000h – 07FFFFh 
-11) Protected range  000000h – 0FFFFFh 
-12) Protected range  000000h – 1FFFFFh 
-13) Protected range  000000h – 3FFFFFh 
-14) Protected range  000000h – 7FFFFFh 
-15) Protected range  7FF000h – 7FFFFFh 
-16) Protected range  7FE000h – 7FFFFFh 
-17) Protected range  7FC000h – 7FFFFFh 
-18) Protected range  7F8000h – 7FFFFFh 
-19) Protected range  000000h – 000FFFh 
-20) Protected range  000000h – 001FFFh 
-21) Protected range  000000h – 003FFFh 
-22) Protected range  000000h – 007FFFh 
+ 6) Protected range 600000h – 7FFFFFh
+ 7) Protected range 400000h – 7FFFFFh
+ 8) Protected range  000000h – 01FFFFh
+ 9) Protected range  000000h – 03FFFFh
+10) Protected range  000000h – 07FFFFh
+11) Protected range  000000h – 0FFFFFh
+12) Protected range  000000h – 1FFFFFh
+13) Protected range  000000h – 3FFFFFh
+14) Protected range  000000h – 7FFFFFh
+15) Protected range  7FF000h – 7FFFFFh
+16) Protected range  7FE000h – 7FFFFFh
+17) Protected range  7FC000h – 7FFFFFh
+18) Protected range  7F8000h – 7FFFFFh
+19) Protected range  000000h – 000FFFh
+20) Protected range  000000h – 001FFFh
+21) Protected range  000000h – 003FFFh
+22) Protected range  000000h – 007FFFh
 
 ...
 
