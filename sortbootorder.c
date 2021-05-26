@@ -467,7 +467,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	if (uartd_toggle != 0) {
 		printf(" p UART D - Currently Enabled - Toggle UART D / GPIO\n");	
 	} else {
-		printf(" o GPIO[9..17] - Currently Enabled - Toggle UART/GPIO\n");
+		printf(" p GPIO[10..17] - Currently Enabled - Toggle UART D / GPIO\n");
 	}
 #ifndef TARGET_APU1
 	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n",
