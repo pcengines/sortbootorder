@@ -460,7 +460,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		printf("  k Redirect console output to COM2 - Currently %s\n",
 			(com2_toggle) ? "Enabled" : "Disabled");
 	if (uartc_toggle != 0) {
-		printf(" o UART C - Currently Enabled - Toggle UART/GPIO\n");	
+		printf(" o UART C - Currently Enabled - Toggle UART C / GPIO\n");	
 	} else {
 		printf(" o GPIO[0..8] - Currently Enabled - Toggle UART/GPIO\n");
 	}
