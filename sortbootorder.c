@@ -459,10 +459,16 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	if (com2_available)
 		printf("  k Redirect console output to COM2 - Currently %s\n",
 			(com2_toggle) ? "Enabled" : "Disabled");
-	printf("  o UART C - Currently %s\n",
-		(uartc_toggle) ? "Enabled" : "Disabled");
-	printf("  p UART D - Currently %s\n",
-		(uartd_toggle) ? "Enabled" : "Disabled");
+	if (uartc_toggle != 0) {
+		printf(" o UART C - Currently Enabled - Toggle UART C / GPIO\n");	
+	} else {
+		printf(" o GPIO[0..7] - Currently Enabled - Toggle UART C / GPIO\n");
+	}
+	if (uartd_toggle != 0) {
+		printf(" p UART D - Currently Enabled - Toggle UART D / GPIO\n");	
+	} else {
+		printf(" p GPIO[10..17] - Currently Enabled - Toggle UART D / GPIO\n");
+	}
 #ifndef TARGET_APU1
 	printf("  m Force mPCIe2 slot CLK (GPP3 PCIe) - Currently %s\n",
 		(mpcie2_clk_toggle) ? "Enabled" : "Disabled");
