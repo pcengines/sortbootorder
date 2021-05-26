@@ -462,7 +462,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	if (uartc_toggle != 0) {
 		printf(" o UART C - Currently Enabled - Toggle UART C / GPIO\n");	
 	} else {
-		printf(" o GPIO[0..8] - Currently Enabled - Toggle UART/GPIO\n");
+		printf(" o GPIO[0..7] - Currently Enabled - Toggle UART C / GPIO\n");
 	}
 	if (uartd_toggle != 0) {
 		printf(" o UART D - Currently Enabled - Toggle UART/GPIO\n");	
