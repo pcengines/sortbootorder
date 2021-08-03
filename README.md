@@ -112,6 +112,12 @@ Sortbootorder manages `bootorder` file which is initially shipped from
 This is binary file that has to be 4096 bytes long in order to entirely fill
 one FLASH sector.
 
+In pre-v4.14 coreboot this file was part of main CBFS. Since v4.14.0.1 it is
+located in a dedicated FMAP region (`BOOTORDER`), which allows for firmware
+upgrades without loss of settings. Refer to [flashing instructions](https://github.com/pcengines/apu2-documentation/blob/master/docs/firmware_flashing.md#corebootrom-flashing)
+for proper command. Files `bootorder_def` and `bootorder_map` (see below) are
+still located in CBFS.
+
 Relevant content of this file may look like this:
 
 ```
