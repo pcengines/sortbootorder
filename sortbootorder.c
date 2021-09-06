@@ -313,11 +313,12 @@ int main(void) {
 				break;
 			case 'i':
 			case 'I':
-				; // empty statement to avoid compilation error
-				char *prompt = readline("Specify the watchdog"
-					" timeout in seconds (0 to disable): ");
-				wdg_timeout = (u16) strtoul(prompt, NULL, 10);
-				prompt[0] = '\0';
+				printf("Specify the watchdog timeout in seconds\n");
+				do {
+					char *prompt = readline("minimum 60 or 0 to disable: ");
+					wdg_timeout = (u16) strtoul(prompt, NULL, 10);
+					prompt[0] = '\0';
+				} while (wdg_timeout != 0 && wdg_timeout < 60);
 				break;
 			case 'j':
 			case 'J':
