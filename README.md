@@ -23,6 +23,7 @@ saves boot order in flash.
   - [Manual build](#manual-build)
   - [Adding sortbootorder to coreboot.rom file](#adding-sortbootorder-to-corebootrom-file)
   - [Recent automated building process](#recent-automated-building-process)
+  - [Issues](#issues)
 
 ## Theory of operation
 
@@ -388,3 +389,8 @@ Please follow
 [release process](https://github.com/pcengines/apu2-documentation/blob/master/docs/release_process.md)
 document to build complete `coreboot` binary, already including `SeaBIOS` and
 other payloads (such us `sortbootorder`).
+
+### Issues
+
+If you want to create an issue, [here](https://github.com/pcengines/apu2-documentation/issues)
+is the right place for that.
