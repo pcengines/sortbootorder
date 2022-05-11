@@ -23,6 +23,7 @@
 #include <flash_access.h>
 #include <sec_reg_menu.h>
 #include <spi/spi_lock_menu.h>
+#include <rtc_clock_menu.h>
 
 #include "version.h"
 
@@ -345,6 +346,9 @@ int main(void) {
 				handle_reg_sec_menu();
 				break;
 #endif
+			case 'z':
+				handle_rtc_clock_menu();
+				break;
 			case 's':
 			case 'S':
 				update_tags(bootlist, &max_lines);
@@ -493,6 +497,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n",
 		(spi_wp_toggle) ? "Enabled" : "Disabled");
+	printf("  z Clock menu\n");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
