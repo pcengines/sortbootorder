@@ -497,7 +497,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 #endif
 	printf("  w Enable BIOS write protect - Currently %s\n",
 		(spi_wp_toggle) ? "Enabled" : "Disabled");
-	printf("  z Clock menu\n")
+	printf("  z Clock menu\n");
 	printf("  x Exit setup without save\n");
 	printf("  s Save configuration and exit\n");
 }
