@@ -18,7 +18,8 @@
 #include <libpayload.h>
 #include <curses.h>
 
-static void print_rtc_clock_menu(struct tm *t) {
+static void print_rtc_clock_menu(struct tm *t)
+{
 	printf("\n\n--- Clock menu ---\n");
 	printf("  Date: %04d-%02d-%02d\n", t->tm_year + 1900, t->tm_mon + 1, t->tm_mday);
 	printf("  Time: %02d:%02d:%02d\n", t->tm_hour, t->tm_min, t->tm_sec);
@@ -33,37 +34,68 @@ static void print_rtc_clock_menu(struct tm *t) {
 	printf("\n");
 }
 
-static void handle_year_command(struct tm *t, char *command) {
+static const int days_in_month_common[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+static const int days_in_month_leap[]   = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+static bool leap_year(struct tm *t)
+{
+	return (t->tm_year % 4 == 0) && (t->tm_year % 100 != 0);
+}
+
+static int days_in_month(struct tm *t)
+{
+	if (leap_year(t))
+		return days_in_month_leap[t->tm_mon];
+	else
+		return days_in_month_common[t->tm_mon];
+}
+
+static void check_and_fix_days(struct tm *t)
+{
+	// if the day is higher than possible, set it to the last day in month
+	if (t->tm_mday > days_in_month(t))
+		t->tm_mday = days_in_month(t);
+}
+
+static void handle_year_command(struct tm *t, char *command)
+{
 	int year;
 
 	year = strtoul(command+2, NULL, 10);
-	if (year >= 1900 && year <= 2099)
+	if (year >= 1900 && year <= 2099) {
 		t->tm_year = year - 1900;
-	else
+		check_and_fix_days(t);
+	} else {
 		printf("Please enter a year between 1900 and 2099\n");
+	}
 }
 
-static void handle_mon_command(struct tm *t, char *command) {
+static void handle_mon_command(struct tm *t, char *command)
+{
 	int mon;
 
 	mon = strtoul(command+2, NULL, 10);
-	if (mon >= 1 && mon <= 12)
+	if (mon >= 1 && mon <= 12) {
 		t->tm_mon = mon - 1;
-	else
+		check_and_fix_days(t);
+	} else {
 		printf("Please enter a month between 1 and 12\n");
+	}
 }
 
-static void handle_day_command(struct tm *t, char *command) {
+static void handle_day_command(struct tm *t, char *command)
+{
 	int day;
 
 	day = strtoul(command+2, NULL, 10);
-	if (day >= 1 && day <= 31)
+	if (day >= 1 && day <= days_in_month(t))
 		t->tm_mday = day;
 	else
-		printf("Please enter a day between 1 and 31\n");
+		printf("Please enter a day between 1 and %d\n", days_in_month(t));
 }
 
-static void handle_hour_command(struct tm *t, char *command) {
+static void handle_hour_command(struct tm *t, char *command)
+{
 	int hour;
 
 	hour = strtoul(command+2, NULL, 10);
@@ -73,7 +105,8 @@ static void handle_hour_command(struct tm *t, char *command) {
 		printf("Please enter hours between 0 and 23\n");
 }
 
-static void handle_min_command(struct tm *t, char *command) {
+static void handle_min_command(struct tm *t, char *command)
+{
 	int min;
 
 	min = strtoul(command+2, NULL, 10);
@@ -83,7 +116,8 @@ static void handle_min_command(struct tm *t, char *command) {
 		printf("Please enter minutes between 0 and 59\n");
 }
 
-static void handle_sec_command(struct tm *t, char *command) {
+static void handle_sec_command(struct tm *t, char *command)
+{
 	int sec;
 
 	sec = strtoul(command+2, NULL, 10);
@@ -93,7 +127,8 @@ static void handle_sec_command(struct tm *t, char *command) {
 		printf("Please enter seconds between 0 and 59\n");
 }
 
-void handle_rtc_clock_menu(void) {
+void handle_rtc_clock_menu(void)
+{
 	struct tm time;
 	bool end = FALSE;
 	char *command;
