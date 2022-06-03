@@ -96,6 +96,9 @@ static u8 com2_toggle;
 // apu5 does not have COM2
 static u8 com2_available;
 
+// apu7 does not support PXE
+static u8 pxe_available;
+
 #ifndef TARGET_APU1
 static u8 ehci0_toggle;
 static u8 mpcie2_clk_toggle;
@@ -118,6 +121,7 @@ static char bootorder_data[4096];
 static char id[MAX_DEVICES] = {0};
 
 static u8 device_toggle[MAX_DEVICES];
+static u8 device_hide[MAX_DEVICES] = {0};
 
 /* sortbootorder payload:
  * This payload allows the user to reorder the lines in the bootorder file.
@@ -189,9 +193,16 @@ int main(void) {
 	fetch_file_from_cbfs( BOOTORDER_MAP, bootlist_map, &bootlist_map_ln );
 
 	// Init ipxe and serial status
-	token = strstr(bootorder_data, "pxen");
-	token += strlen("pxen");
-	ipxe_toggle = token ? strtoul(token, NULL, 10) : 1;
+	if (!strncmp((char*) apu_id_string, "apu7", 4)) {
+		pxe_available = 0;
+	} else {
+		pxe_available = 1;
+		token = strstr(bootorder_data, "pxen");
+		token += strlen("pxen");
+		ipxe_toggle = token ? strtoul(token, NULL, 10) : 1;
+	}
+
+	device_hide[IPXE] = !pxe_available;
 
 	token = strstr(bootorder_data, "usben");
 	token += strlen("usben");
@@ -272,7 +283,8 @@ int main(void) {
 				break;
 			case 'n':
 			case 'N':
-				ipxe_toggle ^= 0x1;
+				if (pxe_available)
+					ipxe_toggle ^= 0x1;
 				break;
 			case 'u':
 			case 'U':
@@ -436,6 +448,8 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	printf("Boot order - type letter to move device to top.\n\n");
 	for (i = 0; i < line_cnt; i++ ) {
 		for (y = 0; y < lineDef_cnt; y++) {
+			if(device_hide[y])
+				continue;
 			if(bootlist_def[y][0] == '/') {
 				if (strcmp_printable_char(&(buffer[i][0]), &(bootlist_def[y][0])) == 0) {
 					unique = 1;
@@ -455,8 +469,9 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 	}
 	printf("\n\n");
 	printf("  r Restore boot order defaults\n");
-	printf("  n Network/PXE boot - Currently %s\n",
-		(ipxe_toggle) ? "Enabled" : "Disabled");
+	if (pxe_available)
+		printf("  n Network/PXE boot - Currently %s\n",
+			(ipxe_toggle) ? "Enabled" : "Disabled");
 	printf("  u USB boot - Currently %s\n",
 		(usb_toggle) ? "Enabled" : "Disabled");
 	printf("  t Serial console - Currently %s\n",
@@ -755,7 +770,8 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 
 static void update_tags(char bootlist[MAX_DEVICES][MAX_LENGTH], u8 *max_lines)
 {
-	update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
+	if (pxe_available)
+		update_tag_value(bootlist, max_lines, "pxen", ipxe_toggle + '0');
 	update_tag_value(bootlist, max_lines, "usben",	usb_toggle + '0');
 	update_tag_value(bootlist, max_lines, "scon", console_toggle + '0');
 	if (com2_available) {
@@ -786,7 +802,7 @@ static void refresh_tag_values(u8 max_lines)
 
 	for ( i = 0; i < max_lines; i++) {
 		token = strstr(&(bootlist_def[i][0]), "pxen");
-		if(token) {
+		if(token && pxe_available) {
 			token += strlen("pxen");
 			ipxe_toggle = strtoul(token, NULL, 10);
 	  	}
