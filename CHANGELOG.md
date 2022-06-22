@@ -7,6 +7,10 @@ Releases 4.5.x and 4.6.x are based on mainline support submitted in
 [this gerrit ref](https://review.coreboot.org/#/c/14138/).
 
 ## [Unreleased]
+## [v4.6.24] - 2022-06-21
+### Added
+- Hide non-working iPXE option on apu7
+
 ## [v4.6.23] - 2022-05-19
 ### Added
 - RTC clock menu for setting the clock after a CMOS reset
@@ -215,7 +219,8 @@ initial commit based on [coreboot_140908](http://pcengines.ch/tmp/coreboot_14090
 ### Fixed
 - used proper way to access extended SPI registers
 
-[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.23...master
+[Unreleased]: https://github.com/pcengines/sortbootorder/compare/v4.6.24...master
+[v4.6.24]: https://github.com/pcengines/sortbootorder/compare/v4.6.23...v4.6.24
 [v4.6.23]: https://github.com/pcengines/sortbootorder/compare/v4.6.22...v4.6.23
 [v4.6.22]: https://github.com/pcengines/sortbootorder/compare/v4.6.21...v4.6.22
 [v4.6.21]: https://github.com/pcengines/sortbootorder/compare/v4.6.20...v4.6.21
