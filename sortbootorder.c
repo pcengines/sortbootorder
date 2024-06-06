@@ -16,14 +16,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <libpayload.h>
+#include <boot_device.h>
 #include <cbfs.h>
+#include <cbfs_glue.h>
 #include <coreboot_tables.h>
 #include <curses.h>
 #include <flash_access.h>
+#include <libpayload.h>
+#include <rtc_clock_menu.h>
 #include <sec_reg_menu.h>
 #include <spi/spi_lock_menu.h>
-#include <rtc_clock_menu.h>
 
 #include "version.h"
 
@@ -502,7 +504,7 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 		(sd3_toggle) ? "Enabled" : "Disabled");
 	printf("  g Reverse order of PCI addresses - Currently %s\n",
 		(pciereverse_toggle) ? "Enabled" : "Disabled");
-		
+
 #ifndef COREBOOT_LEGACY
 	printf("  v IOMMU - Currently %s\n",
 		(iommu_toggle) ? "Enabled" : "Disabled");
@@ -521,31 +523,26 @@ static void show_boot_device_list(char buffer[MAX_DEVICES][MAX_LENGTH],
 static int fetch_bootorder_from_cbfs(char destination[MAX_DEVICES][MAX_LENGTH],
 				     u8 *line_count)
 {
-	char *cbfs_dat;
-	struct cbfs_handle *bootorder_handle;
+	void *bootorder_mapping;
 	size_t cbfs_length;
 
-	bootorder_handle = cbfs_get_handle(CBFS_DEFAULT_MEDIA, BOOTORDER_FILE);
+	bootorder_mapping = cbfs_map(BOOTORDER_FILE, &cbfs_length);
 
-	flash_address = (void *)(bootorder_handle->media_offset + 
-				 bootorder_handle->content_offset);
-
-	if ((u32)flash_address & 0xfff)
-		printf("Warning: The bootorder file is not 4k aligned!\n");
-
-	cbfs_dat = cbfs_get_file_content(CBFS_DEFAULT_MEDIA, BOOTORDER_FILE,
-					 CBFS_TYPE_RAW,	&cbfs_length);
-
-	if (!cbfs_dat) {
+	if (!bootorder_mapping) {
 		printf("Error: file [%s] not found!\n", BOOTORDER_FILE);
 		return -1;
 	}
 
-	if (cbfs_dat[0] == 0xFF || cbfs_dat[0] == 0x00) {
+	printf("The bootorder file size is %zu!\n", cbfs_length);
+
+	if ((u32)bootorder_mapping & 0xfff)
+		printf("Warning: The bootorder file is not 4k aligned!\n");
+
+	if (*(u16 *)bootorder_mapping == 0xFFFF || *(u16 *)bootorder_mapping == 0x0000) {
 		printf("Error: bootorder is empty!\n");
 		return -1;
 	}
-	memcpy(bootorder_data, cbfs_dat, cbfs_length);
+	memcpy(bootorder_data, bootorder_mapping, cbfs_length);
 
 	if (fetch_file_from_cbfs(BOOTORDER_FILE, destination, line_count))
 		return -1;
@@ -557,37 +554,35 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 			   u8 *line_count)
 {
 	char tmp;
-	int offset = 0, char_cnt = 0;
-	u32 bootorder_offset, bootorder_size;
-	struct cbfs_media default_media;
-	struct cbfs_media *media = &default_media;
-
+	u16 offset = 0, char_cnt = 0;
+	static struct cbfs_boot_device rw;
 	u32 rom_begin = (0xFFFFFFFF - lib_sysinfo.spi_flash.size) + 1;
 
-	int rc = fmap_region_by_name(lib_sysinfo.fmap_offset, "BOOTORDER",
-				     &bootorder_offset, &bootorder_size);
-	if (rc == -1) {
+	if (fmap_locate_area("BOOTORDER", &rw.dev.offset, &rw.dev.size)) {
+		printf("BOOTORDER area not found, fetching from CBFS...\n");
 		return fetch_bootorder_from_cbfs(destination, line_count);
-	} else {
-		flash_address = (void *)(rom_begin + bootorder_offset);
-
-		if (init_default_cbfs_media(media))
-			return -1;
-
-		media->open(media);
-		if (!media->read(media, bootorder_data, bootorder_offset,
-				bootorder_size))
-			return -1;
-		media->close(media);
 	}
 
+	flash_address = (void *)(rom_begin + rw.dev.offset);
 	if ((u32)flash_address & 0xfff)
 		printf("Warning: The bootorder file is not 4k aligned!\n");
 
-	if (bootorder_data[0] == 0xFF || bootorder_data[0] == 0x00)
+	if (!rw.dev.size) {
+		printf("BOOTORDER area size is zero, fetching from CBFS...\n");
 		return fetch_bootorder_from_cbfs(destination, line_count);
+	}
 
-	//count up the lines and display
+	if (boot_device_read(bootorder_data, rw.dev.offset, rw.dev.size) != rw.dev.size) {
+		printf("Failed to read bootorder data, fetching from CBFS...\n");
+		return fetch_bootorder_from_cbfs(destination, line_count);
+	}
+
+	if (bootorder_data[0] == 0xFF || bootorder_data[0] == 0x00) {
+		printf("Invalid bootorder region data, fetching from CBFS: (0x%x)...\n", bootorder_data[0] );
+		return fetch_bootorder_from_cbfs(destination, line_count);
+	}
+
+	// Count up the lines and display
 	*line_count = 0;
 	while (1) {
 		tmp = *(bootorder_data + offset++);
@@ -597,21 +592,21 @@ static int fetch_bootorder(char destination[MAX_DEVICES][MAX_LENGTH],
 			char_cnt = 0;
 		}
 		else if ((tmp == 0xFF) || (tmp == NUL) ||
-			 (offset > bootorder_size))
+			 (offset > rw.dev.size))
 			break;
 		else
 			char_cnt++;
 
 		if (*line_count > MAX_DEVICES) {
-			printf("aborting due to excessive line_count\n");
+			printf("Aborting due to excessive line count: %d\n", *line_count);
 			break;
 		}
 		if (char_cnt > MAX_LENGTH) {
-			printf("aborting due to excessive char count\n");
+			printf("Aborting due to excessive char count: %d\n", char_cnt);
 			break;
 		}
-		if (offset > (MAX_LENGTH*MAX_DEVICES)) {
-			printf("aborting due to excessive cbfs ptr length\n");
+		if (offset > (MAX_LENGTH * MAX_DEVICES)) {
+			printf("Aborting due to excessive cbfs ptr length: %d\n", offset);
 			break;
 		}
 	}
@@ -646,7 +641,7 @@ static int fetch_file_from_cbfs(char *filename,
 	int cbfs_offset = 0, char_cnt = 0;
 	size_t cbfs_length;
 
-	cbfs_dat = (char *) cbfs_get_file_content( CBFS_DEFAULT_MEDIA, filename, CBFS_TYPE_RAW, &cbfs_length );
+	cbfs_dat = (char *) cbfs_map(filename, &cbfs_length);
 	if (!cbfs_dat) {
 		printf("Error: file [%s] not found!\n", filename);
 		return 1;
@@ -679,6 +674,8 @@ static int fetch_file_from_cbfs(char *filename,
 			break;
 		}
 	}
+
+	cbfs_unmap(cbfs_dat);
 	return 0;
 }
 
@@ -764,7 +761,7 @@ static void update_wdg_timeout(char buffer[MAX_DEVICES][MAX_LENGTH],
 		buffer[*max_lines][strlen(tag)+5] = '\n';
 		buffer[*max_lines][strlen(tag)+6] = '0';
 		(*max_lines)++;
-	}	
+	}
 }
 #endif
 
