@@ -160,6 +160,7 @@ void handle_rtc_clock_menu(void)
 			break;
 		case 'w':
 			rtc_write_clock(&time);
+			__attribute__((fallthrough));
 		case 'x':
 			end = TRUE;
 			break;

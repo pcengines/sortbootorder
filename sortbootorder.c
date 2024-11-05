@@ -368,6 +368,7 @@ int main(void) {
 				update_tags(bootlist, &max_lines);
 				save_flash((u32)flash_address, bootlist,
 					   max_lines, spi_wp_toggle);
+				__attribute__((fallthrough));
 				// fall through to exit ...
 			case 'x':
 			case 'X':
