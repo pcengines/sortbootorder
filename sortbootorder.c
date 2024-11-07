@@ -55,6 +55,9 @@
 #define MPCIE1_SATA2      16
 #define IPXE              17
 
+#define WRITE_BYTE_CMD		0x10
+#define READ_ARRAY_CMD		0xFF
+
 #define RESET() outb(0x06, 0x0cf9)
 
 /*** prototypes ***/
@@ -168,10 +171,13 @@ int main(void) {
 	printf("\n### PC Engines %s setup %s ###\n", apu_id_string,
 		SORTBOOTORDER_VER);
 
+	char *is_qemu = strstr((char*)apu_id_string, "QEMU");
 
-	if (init_flash()) {
+	if (init_flash() && !is_qemu) {
 		printf("Can't initialize flash device!\n");
 		RESET();
+	} else {
+		printf("QEMU detected. SPI flash initialization skipped.\n");
 	}
 
 	// Find out where the bootorder file is in rom
@@ -266,7 +272,11 @@ int main(void) {
 	token += strlen("uartd");
 	uartd_toggle = token ? strtoul(token, NULL, 10) : 0;
 
-	spi_wp_toggle = is_flash_locked();
+	if (!is_qemu) {
+		spi_wp_toggle = is_flash_locked();
+	} else {
+		printf("QEMU detected. SPI flash flash lock check skipped.\n");
+	}
 
 	show_boot_device_list( bootlist, max_lines, bootlist_def_ln );
 	int_ids( bootlist, max_lines, bootlist_def_ln );
@@ -366,8 +376,39 @@ int main(void) {
 			case 's':
 			case 'S':
 				update_tags(bootlist, &max_lines);
-				save_flash((u32)flash_address, bootlist,
+				if (!is_qemu) {
+					save_flash((u32)flash_address, bootlist,
 					   max_lines, spi_wp_toggle);
+				} else {
+					printf("QEMU detected. save_flash not implemented.\n");
+					// Compact the table into the expected packed list
+					char cbfs_formatted_list[MAX_DEVICES * MAX_LENGTH];
+					int i, j, k = 0;
+					volatile char *ptr;
+					flash_address = (void *)(uintptr_t)(0x100000000ULL - 0x800000);
+					for (j = 0; j < max_lines; j++) {
+						for (k = 0; k < MAX_LENGTH; k++) {
+							cbfs_formatted_list[i++] = bootlist[j][k];
+							if (bootlist[j][k] == NEWLINE )
+								break;
+						}
+					}
+					cbfs_formatted_list[i++] = NUL;
+					printf("Writing %d bytes @ %p\n", i, flash_address);
+					ptr = flash_address;
+
+					for (j = 0; j < i; j++) {
+						write8(ptr, WRITE_BYTE_CMD);
+						write8(ptr, cbfs_formatted_list[j]);
+						ptr++;
+					}
+
+					/* Restore flash to read mode. */
+					if (i > 0) {
+						write8(ptr - 1, READ_ARRAY_CMD);
+					}
+					printf("Done\n");
+				}
 				__attribute__((fallthrough));
 				// fall through to exit ...
 			case 'x':
