@@ -77,7 +77,7 @@ OBJCOPY := $(OBJCOPY_$(ARCH-y))
 LPCC := CC="$(CC)" $(LIBPAYLOAD_OBJ)/bin/lpgcc
 LPAS := AS="$(AS)" $(LIBPAYLOAD_OBJ)/bin/lpas
 
-CFLAGS += -Wall -Werror -Os -fno-builtin $(CFLAGS_$(ARCH-y)) $(INCLUDES)
+CFLAGS += -Wall -Werror -Os -fno-builtin -ffile-prefix-map=$(PWD)=. $(CFLAGS_$(ARCH-y)) $(INCLUDES)
 ifeq ($(COREBOOT_REL),legacy)
 	CFLAGS += -DCOREBOOT_LEGACY
 endif
