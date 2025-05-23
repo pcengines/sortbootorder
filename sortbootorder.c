@@ -176,7 +176,7 @@ int main(void) {
 	if (init_flash() && !is_qemu) {
 		printf("Can't initialize flash device!\n");
 		RESET();
-	} else {
+	} else if (is_qemu) {
 		printf("QEMU detected. SPI flash initialization skipped.\n");
 	}
 
