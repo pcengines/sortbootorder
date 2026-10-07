@@ -383,7 +383,7 @@ int main(void) {
 					printf("QEMU detected. save_flash not implemented.\n");
 					// Compact the table into the expected packed list
 					char cbfs_formatted_list[MAX_DEVICES * MAX_LENGTH];
-					int i, j, k = 0;
+					int i = 0, j, k = 0;
 					volatile char *ptr;
 					flash_address = (void *)(uintptr_t)(0x100000000ULL - 0x800000);
 					for (j = 0; j < max_lines; j++) {
